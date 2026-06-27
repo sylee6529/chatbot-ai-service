@@ -154,14 +154,14 @@ curl -s -o /dev/null -w '%{http_code}\n' -XPOST \
 
 ---
 
-## Phase 6 — 분석 & 리포팅  (P1)
+## Phase 6 — 분석 & 리포팅  ✅ (P1)
 
 **산출물**
-- [ ] `GET /api/v1/admin/activity` — 관리자 전용; 최근 **24시간** 가입·로그인·
+- [x] `GET /api/v1/admin/activity` — 관리자 전용; 최근 **24시간** 가입·로그인·
       채팅 생성 수.
-- [ ] `GET /api/v1/admin/reports/chats.csv` — 관리자 전용; 최근 24시간 모든 채팅 +
+- [x] `GET /api/v1/admin/reports/chats.csv` — 관리자 전용; 최근 24시간 모든 채팅 +
       생성 사용자; `Content-Type: text/csv`.
-- [ ] 회원가입/로그인/채팅 생성 시 `activity_logs` 기록.
+- [x] 회원가입/로그인/채팅 생성 시 `activity_logs` 기록.
 
 **검증**
 ```bash

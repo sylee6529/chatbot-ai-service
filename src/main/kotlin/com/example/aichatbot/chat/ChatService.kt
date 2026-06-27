@@ -8,6 +8,8 @@ import com.example.aichatbot.common.BadRequestException
 import com.example.aichatbot.common.ForbiddenException
 import com.example.aichatbot.common.NotFoundException
 import com.example.aichatbot.common.PageResponse
+import com.example.aichatbot.report.ActivityLogService
+import com.example.aichatbot.report.ActivityType
 import com.example.aichatbot.user.Role
 import com.example.aichatbot.user.User
 import com.example.aichatbot.user.UserRepository
@@ -28,6 +30,7 @@ class ChatService(
     private val threadRepository: ChatThreadRepository,
     private val chatRepository: ChatRepository,
     private val aiClient: AiClient,
+    private val activityLogService: ActivityLogService,
     private val clock: Clock,
     transactionManager: PlatformTransactionManager,
     @Value("\${chat.thread.window-minutes:30}") private val threadWindowMinutes: Long,
@@ -143,6 +146,7 @@ class ChatService(
                         createdAt = now,
                     ),
                 )
+                activityLogService.record(user, ActivityType.CHAT_CREATED)
 
                 CreateChatResponse(
                     chatId = requireNotNull(chat.id),

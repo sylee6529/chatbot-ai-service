@@ -3,6 +3,8 @@ package com.example.aichatbot.auth
 import com.example.aichatbot.common.BadRequestException
 import com.example.aichatbot.common.ConflictException
 import com.example.aichatbot.common.UnauthorizedException
+import com.example.aichatbot.report.ActivityLogService
+import com.example.aichatbot.report.ActivityType
 import com.example.aichatbot.user.Role
 import com.example.aichatbot.user.User
 import com.example.aichatbot.user.UserRepository
@@ -19,6 +21,7 @@ class AuthService(
     private val userRepository: UserRepository,
     private val passwordEncoder: PasswordEncoder,
     private val jwtService: JwtService,
+    private val activityLogService: ActivityLogService,
     private val clock: Clock,
 ) {
 
@@ -41,6 +44,7 @@ class AuthService(
             ),
         )
 
+        activityLogService.record(user, ActivityType.SIGNUP)
         return user.toResponse()
     }
 
@@ -54,6 +58,7 @@ class AuthService(
             throw UnauthorizedException("Invalid email or password")
         }
 
+        activityLogService.record(user, ActivityType.LOGIN)
         return LoginResponse(
             accessToken = jwtService.createAccessToken(user),
             user = user.toResponse(includeCreatedAt = false),
