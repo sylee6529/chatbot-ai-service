@@ -49,6 +49,8 @@ curl -s localhost:8080/api/v1/health
 비밀 값은 커밋하지 않습니다. 로컬에서는 셸 환경변수나 별도 비커밋 파일로 주입합니다.
 `AI_API_KEY`가 비어 있으면 외부 provider를 호출하지 않고 명시적인 deterministic fallback 답변을 반환합니다.
 채팅 생성은 AI 호출을 DB 트랜잭션과 사용자 row lock 밖에서 수행하고, 저장 시점에 30분 스레드 규칙을 재검증합니다.
+AI 호출 전 컨텍스트 스냅샷과 호출 후 최종 저장 스레드는 각각 최신 채팅 기준으로 계산합니다.
+단일 사용자 저장은 row lock으로 직렬화되며, 스레드 내부 채팅 페이징은 향후 확장 항목입니다.
 
 ## Database
 
@@ -64,6 +66,7 @@ curl -s localhost:8080/api/v1/health
 docker compose config
 ./gradlew clean compileKotlin
 ./gradlew test
+./docs/curl-examples.sh
 ```
 
 ## Auth Smoke Test
@@ -110,3 +113,13 @@ curl -N -XPOST localhost:8080/api/v1/chats \
 - `docs/03-data-model.md`
 - `docs/04-demo-scenario.md`
 - `docs/manual.html`
+
+## Future Work
+
+- RAG context retrieval
+- Multiple AI providers
+- Refresh token and email verification
+- Rate limiting
+- Audit log retention and export policy
+- Thread-internal chat pagination
+- Bulk soft-delete updates for large threads

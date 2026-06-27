@@ -10,6 +10,7 @@ import org.springframework.security.core.AuthenticationException
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
 
 @RestControllerAdvice
 class GlobalExceptionHandler {
@@ -39,6 +40,10 @@ class GlobalExceptionHandler {
     fun handleUnreadable(request: HttpServletRequest): ResponseEntity<ApiError> =
         errorResponse(HttpStatus.BAD_REQUEST, "Invalid request body", request)
 
+    @ExceptionHandler(MethodArgumentTypeMismatchException::class)
+    fun handleTypeMismatch(request: HttpServletRequest): ResponseEntity<ApiError> =
+        errorResponse(HttpStatus.BAD_REQUEST, "Invalid request parameter", request)
+
     // Security filters normally use JsonAuthenticationEntryPoint first; this covers MVC/method-security exceptions.
     @ExceptionHandler(AuthenticationException::class)
     fun handleAuthentication(request: HttpServletRequest): ResponseEntity<ApiError> =
@@ -48,6 +53,10 @@ class GlobalExceptionHandler {
     @ExceptionHandler(AccessDeniedException::class)
     fun handleAccessDenied(request: HttpServletRequest): ResponseEntity<ApiError> =
         errorResponse(HttpStatus.FORBIDDEN, "You do not have permission to access this resource", request)
+
+    @ExceptionHandler(Exception::class)
+    fun handleUnexpected(request: HttpServletRequest): ResponseEntity<ApiError> =
+        errorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected server error", request)
 
     private fun errorResponse(
         status: HttpStatus,

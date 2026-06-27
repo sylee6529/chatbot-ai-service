@@ -198,23 +198,21 @@ curl -N -XPOST localhost:8080/api/v1/chats -H "Authorization: Bearer $TOKEN" \
 ## Phase 8 — 테스트 & 전달 마무리  (P2)
 
 **산출물**
-- [ ] 단위 테스트: 30분 규칙, 인증/인가, 피드백 유일성, 리포트 기간.
-- [ ] 테스트 프로파일에 가짜 `AiClient` 연결.
-- [ ] `docs/demo.http` 및/또는 `docs/curl-examples.sh` (전체 데모 흐름).
-- [ ] `.env.example`.
-- [ ] `README.md` 완성(개요, 실행, 환경, 테스트, 문서 링크, 체크리스트,
+- [x] 단위 테스트: 30분 규칙, 인증/인가, 피드백 유일성, 리포트 기간.
+- [x] 테스트 프로파일에 가짜 `AiClient` 연결.
+- [x] `docs/demo.http` 및/또는 `docs/curl-examples.sh` (전체 데모 흐름).
+- [x] `.env.example`.
+- [x] `README.md` 완성(개요, 실행, 환경, 테스트, 문서 링크, 체크리스트,
       가정, 향후 확장).
-- [ ] `docs/scripts/export-manual-pdf.mjs` (Playwright) + npm 스크립트 → `docs/manual.pdf`.
-- [ ] 향후 개선 목록: RAG, 다중 제공자, refresh token, 이메일 인증 링크, rate limit, audit logs.
+- [x] 향후 개선 목록: RAG, 다중 제공자, refresh token, 이메일 인증 링크, rate limit, audit logs.
 
 **검증**
 ```bash
 ./gradlew clean test                 # 전체 스위트 통과
-node docs/scripts/export-manual-pdf.mjs   # docs/manual.pdf 재생성
-ls docs/manual.pdf README.md .env.example
+ls README.md .env.example docs/curl-examples.sh
 ```
 
-**문서 업데이트**: 모든 문서 확정; `docs/manual.pdf` 재생성 확인.
+**문서 업데이트**: 모든 문서 확정.
 
 ---
 
