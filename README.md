@@ -56,7 +56,7 @@ AI 연동은 OpenAI-compatible 설정(`AI_API_KEY`, `AI_BASE_URL`, `AI_DEFAULT_M
 
 
 
-- `docs/manual.html` — 고객사 제공용 API 사용 매뉴얼입니다. API 스펙에 익숙하지 않은 사용자도 인증, 질문 생성, 대화 이력, 피드백, 관리자 기능을 이해할 수 있도록 작성했습니다. 웹 화면으로 열 수 있고, PDF로 출력해도 문서처럼 읽히는 구성을 의도했습니다.
+- `docs/manual.html` — 고객사 제공용 API 사용 매뉴얼입니다. 인증, 질문 생성, 대화 이력, 피드백, 관리자 기능을 이해할 수 있도록 작성했습니다. 웹 화면으로 열 수 있고, PDF로 출력해도 문서처럼 읽히는 구성을 의도했습니다.
 
 <img width="1070" height="907" alt="image" src="https://github.com/user-attachments/assets/639487e1-7758-4eda-9c2b-f3eeab0c6c7e" />
 
