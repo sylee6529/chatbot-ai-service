@@ -90,22 +90,22 @@ curl -s -o /dev/null -w '%{http_code}\n' localhost:8080/api/v1/chats
 
 ---
 
-## Phase 3 — 챗봇 코어  (P0)
+## Phase 3 — 챗봇 코어  ✅ (P0)
 
 **산출물**
-- [ ] `AiClient` 인터페이스; OpenAI 호환 구현; 설정 기반 키/baseUrl/모델.
-- [ ] `Thread`/`Chat` 엔티티 + repository.
-- [ ] `ChatService`의 30분 스레드 생성/재사용 규칙.
-- [ ] `POST /api/v1/chats` — 질문 + 답변 영속화, 채팅 + 스레드 id 반환.
-- [ ] 이전 스레드 컨텍스트를 AI에 전달.
-- [ ] `model` 오버라이드; 키 없을 때 폴백 동작(명시적 + 문서화).
+- [x] `AiClient` 인터페이스; OpenAI 호환 구현; 설정 기반 키/baseUrl/모델.
+- [x] `Thread`/`Chat` 엔티티 + repository.
+- [x] `ChatService`의 30분 스레드 생성/재사용 규칙.
+- [x] `POST /api/v1/chats` — 질문 + 답변 영속화, 채팅 + 스레드 id 반환.
+- [x] 이전 스레드 컨텍스트를 AI에 전달.
+- [x] `model` 오버라이드; 키 없을 때 폴백 동작(명시적 + 문서화).
 
 **검증**
 ```bash
 ./gradlew test --tests '*Thread*' --tests '*Chat*'
 TOKEN=...   # 로그인에서 획득
 curl -s -XPOST localhost:8080/api/v1/chats -H "Authorization: Bearer $TOKEN" \
-  -H 'Content-Type: application/json' -d '{"message":"Hello"}'
+  -H 'Content-Type: application/json' -d '{"question":"Hello"}'
 # 30분 이내 두 번째 호출은 같은 threadId 재사용
 ```
 

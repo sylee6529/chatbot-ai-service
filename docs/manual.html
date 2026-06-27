@@ -81,10 +81,10 @@
     nav.toc a:hover { text-decoration: underline; }
 
     section {
-      margin: 58px 0;
+      margin: 64px 0;
       scroll-margin-top: 16px;
     }
-    nav.toc + section { margin-top: 46px; }
+    nav.toc + section { margin-top: 48px; }
     h2 {
       margin: 0 0 14px;
       padding-bottom: 7px;
@@ -92,17 +92,29 @@
       font-size: 1.42rem;
       letter-spacing: 0;
     }
-    h3 { margin: 22px 0 8px; font-size: 1.08rem; }
-    p { margin: 10px 0; }
-    ul, ol { margin: 10px 0; padding-left: 22px; }
+    h3 { margin: 32px 0 8px; font-size: 1.08rem; }
+    h2 + p,
+    h2 + ul,
+    h2 + table {
+      margin-top: 0;
+    }
+    p { margin: 8px 0; }
+    ul, ol { margin: 8px 0; padding-left: 22px; }
+    li { margin: 4px 0; }
 
     .lead { font-size: 1.04rem; }
     .muted { color: var(--muted); }
+    .content-list {
+      margin: 10px 0 14px;
+    }
+    .content-list li {
+      margin: 6px 0;
+    }
 
     table {
       width: 100%;
       border-collapse: collapse;
-      margin: 14px 0;
+      margin: 12px 0 18px;
       font-size: 0.92rem;
     }
     th, td {
@@ -122,7 +134,7 @@
     }
 
     pre {
-      margin: 12px 0;
+      margin: 10px 0 14px;
       padding: 14px 16px;
       color: var(--code-ink);
       background: var(--code-bg);
@@ -149,7 +161,7 @@
       border: 1px solid var(--line);
       border-radius: 8px;
       overflow: hidden;
-      margin: 14px 0 18px;
+      margin: 12px 0 18px;
       background: #fff;
       max-width: 440px;
     }
@@ -189,7 +201,7 @@
       border: 1px solid var(--line);
       background: #fff;
       padding: 16px 18px;
-      margin: 14px 0 22px;
+      margin: 18px 0 24px;
       break-inside: avoid;
     }
     .doc-box h3 {
@@ -203,7 +215,7 @@
       counter-reset: step;
       display: grid;
       gap: 10px;
-      margin: 14px 0;
+      margin: 12px 0;
     }
     .step {
       counter-increment: step;
@@ -247,7 +259,7 @@
       nav.toc, .doc-box, .chat-preview, pre, table { break-inside: avoid; }
       section {
         break-inside: avoid-page;
-        margin: 42px 0;
+        margin: 46px 0;
       }
       nav.toc + section { margin-top: 34px; }
       pre {
@@ -304,8 +316,11 @@
     <section id="overview">
       <h2>1. 서비스 개요</h2>
       <p class="lead">이 API는 고객사의 앱, 웹, 내부 업무 도구에서 AI 챗봇 답변을 호출할 수 있게 하는 백엔드 인터페이스입니다.</p>
-      <p>사용자는 질문을 전송하고 AI 답변을 받을 수 있습니다. 생성된 질문과 답변은 대화 이력으로 저장되며, 이어지는 대화는 스레드 단위로 관리됩니다.</p>
-      <p>관리자는 전체 대화와 피드백을 확인하고, 최근 24시간의 사용자 활동 및 대화 보고서를 조회할 수 있습니다.</p>
+      <ul class="content-list">
+        <li>사용자는 질문을 전송하고 AI 답변을 받을 수 있습니다.</li>
+        <li>생성된 질문과 답변은 대화 이력으로 저장되며, 이어지는 대화는 스레드 단위로 관리됩니다.</li>
+        <li>관리자는 전체 대화와 피드백을 확인하고, 최근 24시간의 사용자 활동 및 대화 보고서를 조회할 수 있습니다.</li>
+      </ul>
       <table>
         <thead>
           <tr><th>구분</th><th>설명</th></tr>
@@ -476,7 +491,11 @@
       <h2>5. 질문과 답변 생성</h2>
       <p><span class="method m-post">POST</span> <code>/api/v1/chats</code></p>
       <p class="endpoint-meta">권한: 로그인한 사용자가 호출할 수 있습니다. 일반 사용자는 자신의 계정으로 대화를 생성하고, 관리자는 관리자 계정으로 동일하게 호출할 수 있습니다.</p>
-      <p>질문을 보내면 AI 답변, 채팅 ID, 스레드 ID가 반환됩니다. <code>model</code>을 생략하면 서버 기본 모델을 사용합니다.</p>
+      <ul class="content-list">
+        <li>질문을 보내면 AI 답변, 채팅 ID, 스레드 ID가 반환됩니다.</li>
+        <li><code>model</code>을 생략하면 서버 기본 모델을 사용합니다.</li>
+        <li><code>AI_API_KEY</code>가 없으면 외부 AI를 호출하지 않고 키 미설정을 명시한 fallback 답변을 반환합니다.</li>
+      </ul>
       <pre><code>curl -X POST http://localhost:8080/api/v1/chats \
   -H "Authorization: Bearer $TOKEN" \
   -H 'Content-Type: application/json' \
@@ -512,8 +531,12 @@ data: {"chatId":12,"threadId":3,"model":"gpt-4o-mini"}</code></pre>
 
     <section id="threads">
       <h2>6. 대화 이력 관리</h2>
-      <p>스레드는 이어지는 대화를 묶는 단위입니다. 같은 사용자의 마지막 질문으로부터 30분 이내에 다시 질문하면 기존 스레드를 유지하고, 30분이 지나면 새 스레드를 만듭니다.</p>
-      <p>응답의 <code>threadId</code>가 이전 질문과 같으면 같은 대화 맥락이 유지된 것입니다. 이 스레드의 이전 질문과 답변은 다음 AI 요청의 문맥으로 함께 전달됩니다.</p>
+      <ul class="content-list">
+        <li>스레드는 이어지는 대화를 묶는 단위입니다.</li>
+        <li>같은 사용자의 마지막 질문으로부터 30분 이내에 다시 질문하면 기존 스레드를 유지하고, 30분이 지나면 새 스레드를 만듭니다.</li>
+        <li>응답의 <code>threadId</code>가 이전 질문과 같으면 같은 대화 맥락이 유지된 것입니다.</li>
+        <li>이 스레드의 이전 질문과 답변은 다음 AI 요청의 문맥으로 함께 전달됩니다.</li>
+      </ul>
 
       <h3>스레드별 대화 목록</h3>
       <p><span class="method m-get">GET</span> <code>/api/v1/chats?page=0&amp;size=20&amp;sort=createdAt,desc</code></p>
@@ -560,7 +583,11 @@ data: {"chatId":12,"threadId":3,"model":"gpt-4o-mini"}</code></pre>
 
     <section id="feedback">
       <h2>7. 답변 피드백 관리</h2>
-      <p>특정 AI 답변에 대한 사용자 피드백을 기록하는 API입니다. 피드백 값은 긍정 또는 부정으로 저장되며, 한 사용자는 하나의 대화에 한 번만 피드백을 생성할 수 있습니다.</p>
+      <ul class="content-list">
+        <li>특정 AI 답변에 대한 사용자 피드백을 기록하는 API입니다.</li>
+        <li>피드백 값은 긍정 또는 부정으로 저장됩니다.</li>
+        <li>한 사용자는 하나의 대화에 한 번만 피드백을 생성할 수 있습니다.</li>
+      </ul>
       <p><span class="method m-post">POST</span> <code>/api/v1/chats/{chatId}/feedbacks</code></p>
       <p class="endpoint-meta">권한: 일반 사용자는 본인이 생성한 대화에만 피드백을 생성할 수 있습니다. 관리자는 모든 대화에 피드백을 생성할 수 있습니다.</p>
       <pre><code>curl -X POST http://localhost:8080/api/v1/chats/10/feedbacks \
@@ -587,7 +614,10 @@ data: {"chatId":12,"threadId":3,"model":"gpt-4o-mini"}</code></pre>
 
     <section id="admin">
       <h2>8. 관리자 기능</h2>
-      <p>관리자는 고객사 전체 사용 현황과 최근 24시간 대화 데이터를 확인할 수 있습니다.</p>
+      <ul class="content-list">
+        <li>관리자는 고객사 전체 사용 현황을 확인할 수 있습니다.</li>
+        <li>최근 24시간 대화 데이터를 CSV 보고서로 내려받을 수 있습니다.</li>
+      </ul>
       <h3>최근 24시간 활동 집계</h3>
       <p><span class="method m-get">GET</span> <code>/api/v1/admin/activity</code></p>
       <p class="endpoint-meta">권한: 관리자만 호출할 수 있습니다.</p>

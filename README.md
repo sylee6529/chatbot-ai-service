@@ -2,9 +2,9 @@
 
 Kotlin 1.9.25, Spring Boot 3.3.5, PostgreSQL 15.8 기반 AI 챗봇 백엔드입니다.
 
-현재 구현 진행 기준은 `TASKS.md`입니다. Phase 1과 Phase 2가 완료되어
-프로젝트 부트스트랩, DB 마이그레이션, 헬스체크, 회원가입, 로그인, JWT 인증을
-제공합니다.
+현재 구현 진행 기준은 `TASKS.md`입니다. Phase 1부터 Phase 3까지 완료되어
+프로젝트 부트스트랩, DB 마이그레이션, 헬스체크, 회원가입, 로그인, JWT 인증,
+채팅 생성과 30분 스레드 재사용을 제공합니다.
 
 ## Requirements
 
@@ -41,9 +41,13 @@ curl -s localhost:8080/api/v1/health
 | `AI_API_KEY` | empty | OpenAI-compatible API key |
 | `AI_BASE_URL` | `https://api.openai.com/v1` | OpenAI-compatible base URL |
 | `AI_DEFAULT_MODEL` | `gpt-4o-mini` | 기본 모델 |
+| `AI_CONNECT_TIMEOUT_SECONDS` | `5` | AI provider 연결 타임아웃 |
+| `AI_READ_TIMEOUT_SECONDS` | `30` | AI provider 응답 대기 타임아웃 |
 | `CHAT_THREAD_WINDOW_MINUTES` | `30` | 스레드 재사용 시간 |
 
 비밀 값은 커밋하지 않습니다. 로컬에서는 셸 환경변수나 별도 비커밋 파일로 주입합니다.
+`AI_API_KEY`가 비어 있으면 외부 provider를 호출하지 않고 명시적인 deterministic fallback 답변을 반환합니다.
+채팅 생성은 AI 호출을 DB 트랜잭션과 사용자 row lock 밖에서 수행하고, 저장 시점에 30분 스레드 규칙을 재검증합니다.
 
 ## Database
 
@@ -77,8 +81,16 @@ curl -s -o /dev/null -w '%{http_code}\n' localhost:8080/api/v1/chats \
   -H "Authorization: Bearer $TOKEN"
 ```
 
-현재 `/api/v1/chats`는 Phase 3 구현 전이므로, 토큰이 없으면 `401`, 토큰이 있으면
-인증을 통과한 뒤 라우트 미구현으로 `404`가 반환됩니다.
+토큰이 없으면 `401`, 토큰이 있으면 채팅 API를 호출할 수 있습니다.
+
+## Chat Smoke Test
+
+```bash
+curl -s -XPOST localhost:8080/api/v1/chats \
+  -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"question":"Hello"}'
+```
 
 ## Documentation
 

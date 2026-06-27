@@ -8,6 +8,7 @@
 스레드별 그룹핑 목록 → 피드백 생성 → 관리자 일일 활동 → 관리자 CSV 리포트.
 
 > 전제: 앱이 `localhost:8080`에서 구동 중이고 서버의 AI provider 연동이 완료되어 있습니다.
+> `AI_API_KEY`가 비어 있으면 외부 provider 대신 키 미설정을 명시하는 deterministic fallback 답변이 반환됩니다.
 
 ---
 

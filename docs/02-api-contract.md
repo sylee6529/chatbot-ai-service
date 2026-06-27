@@ -217,6 +217,8 @@ AI에 전달됩니다.
 
 오류: `400`(빈 질문 / model 빈 값·길이·문자 형식 오류 / 잘못된 isStreaming), `401`,
 `502`(AI provider 응답 오류), `504`(AI provider 시간 초과).
+`AI_API_KEY`가 설정되지 않은 로컬 환경에서는 외부 provider를 호출하지 않고,
+키가 없음을 명시하는 deterministic fallback 답변을 반환합니다.
 
 ```bash
 curl -s -XPOST localhost:8080/api/v1/chats -H "Authorization: Bearer $TOKEN" \
