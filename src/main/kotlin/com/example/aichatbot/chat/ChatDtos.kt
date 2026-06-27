@@ -18,3 +18,19 @@ data class CreateChatResponse(
     val model: String,
     val createdAt: Instant,
 )
+
+data class ThreadChatsResponse(
+    val threadId: Long,
+    val userId: Long,
+    val createdAt: Instant,
+    val updatedAt: Instant,
+    val chats: List<ChatItemResponse>,
+)
+
+data class ChatItemResponse(
+    val chatId: Long,
+    val question: String,
+    val answer: String,
+    val model: String?,
+    val createdAt: Instant,
+)

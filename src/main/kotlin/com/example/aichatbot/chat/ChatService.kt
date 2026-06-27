@@ -5,10 +5,15 @@ import com.example.aichatbot.ai.AiContextMessage
 import com.example.aichatbot.ai.AiGenerateRequest
 import com.example.aichatbot.ai.AiMessageRole
 import com.example.aichatbot.common.BadRequestException
+import com.example.aichatbot.common.ForbiddenException
 import com.example.aichatbot.common.NotFoundException
+import com.example.aichatbot.common.PageResponse
+import com.example.aichatbot.user.Role
 import com.example.aichatbot.user.User
 import com.example.aichatbot.user.UserRepository
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.TransactionDefinition
@@ -52,6 +57,55 @@ class ChatService(
         )
 
         return saveChat(userId, question, aiResponse.answer, aiResponse.model)
+    }
+
+    fun getThreadChats(
+        currentUserId: Long,
+        currentUserRole: Role,
+        requestedUserId: Long?,
+        page: Int,
+        size: Int,
+        sort: String?,
+    ): PageResponse<ThreadChatsResponse> {
+        if (page < 0) {
+            throw BadRequestException("page must be greater than or equal to 0")
+        }
+        if (size !in 1..100) {
+            throw BadRequestException("size must be between 1 and 100")
+        }
+        val sortSpec = parseSort(sort)
+        val scopedUserId = when (currentUserRole) {
+            Role.MEMBER -> {
+                if (requestedUserId != null && requestedUserId != currentUserId) {
+                    throw ForbiddenException("userId is only available for admins")
+                }
+                currentUserId
+            }
+            Role.ADMIN -> requestedUserId
+        }
+
+        val threadsPage = threadRepository.findActiveThreads(
+            scopedUserId,
+            PageRequest.of(page, size, Sort.by(sortSpec.direction, sortSpec.property)),
+        )
+        val threadIds = threadsPage.content.mapNotNull { it.id }
+        val chatsByThreadId = if (threadIds.isEmpty()) {
+            emptyMap()
+        } else {
+            chatRepository.findByThreadIdInAndDeletedAtIsNullOrderByCreatedAtAsc(threadIds)
+                .groupBy { requireNotNull(it.thread.id) }
+        }
+        val content = threadsPage.content.map { thread ->
+            ThreadChatsResponse(
+                threadId = requireNotNull(thread.id),
+                userId = requireNotNull(thread.user.id),
+                createdAt = thread.createdAt,
+                updatedAt = thread.updatedAt,
+                chats = chatsByThreadId[requireNotNull(thread.id)].orEmpty().map { it.toItemResponse() },
+            )
+        }
+
+        return PageResponse.of(threadsPage, content, sortSpec.raw)
     }
 
     private fun loadContextSnapshot(userId: Long): List<AiContextMessage> =
@@ -145,3 +199,32 @@ class ChatService(
         private val MODEL_PATTERN = Regex("^[A-Za-z0-9._:/+-]{1,100}$")
     }
 }
+
+private data class ThreadSortSpec(
+    val property: String,
+    val direction: Sort.Direction,
+    val raw: String,
+)
+
+private fun parseSort(sort: String?): ThreadSortSpec {
+    val raw = sort?.takeIf { it.isNotBlank() } ?: "createdAt,desc"
+    val parts = raw.split(",")
+    if (parts.size != 2 || parts[0] != "createdAt") {
+        throw BadRequestException("sort must be createdAt,asc or createdAt,desc")
+    }
+    val direction = when (parts[1].lowercase()) {
+        "asc" -> Sort.Direction.ASC
+        "desc" -> Sort.Direction.DESC
+        else -> throw BadRequestException("sort must be createdAt,asc or createdAt,desc")
+    }
+    return ThreadSortSpec(property = "createdAt", direction = direction, raw = "createdAt,${parts[1].lowercase()}")
+}
+
+private fun Chat.toItemResponse(): ChatItemResponse =
+    ChatItemResponse(
+        chatId = requireNotNull(id),
+        question = question,
+        answer = answer,
+        model = model,
+        createdAt = createdAt,
+    )

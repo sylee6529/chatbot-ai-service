@@ -7,4 +7,6 @@ interface ChatRepository : JpaRepository<Chat, Long> {
     fun findTopByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(userId: Long): Optional<Chat>
 
     fun findByThreadIdAndDeletedAtIsNullOrderByCreatedAtAsc(threadId: Long): List<Chat>
+
+    fun findByThreadIdInAndDeletedAtIsNullOrderByCreatedAtAsc(threadIds: Collection<Long>): List<Chat>
 }

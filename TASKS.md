@@ -114,12 +114,12 @@ curl -s -XPOST localhost:8080/api/v1/chats -H "Authorization: Bearer $TOKEN" \
 
 ---
 
-## Phase 4 — 채팅 조회  (P0)
+## Phase 4 — 채팅 조회  ✅ (P0)
 
 **산출물**
-- [ ] `GET /api/v1/chats` 스레드별 그룹핑; 멤버는 본인 것, 관리자는 전체.
-- [ ] `createdAt` 정렬 asc/desc; 페이지네이션(`page`, `size`).
-- [ ] 관리자용 선택적 `userId` 필터.
+- [x] `GET /api/v1/chats` 스레드별 그룹핑; 멤버는 본인 것, 관리자는 전체.
+- [x] `createdAt` 정렬 asc/desc; 페이지네이션(`page`, `size`).
+- [x] 관리자용 선택적 `userId` 필터.
 
 **검증**
 ```bash
