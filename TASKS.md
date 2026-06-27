@@ -132,14 +132,14 @@ curl -s "localhost:8080/api/v1/chats?page=0&size=10&sort=createdAt,desc" \
 
 ---
 
-## Phase 5 — 스레드 삭제 & 피드백  (P1)
+## Phase 5 — 스레드 삭제 & 피드백  ✅ (P1)
 
 **산출물**
-- [ ] `DELETE /api/v1/threads/{id}` — 소유자 또는 관리자만; 하드/소프트 삭제 문서화.
-- [ ] `POST /api/v1/chats/{chatId}/feedbacks` — 본인 채팅(멤버)/모든 채팅(관리자).
-- [ ] `(user_id, chat_id)` 유일성 강제(DB 제약 + 서비스 검사 → `409`).
-- [ ] `GET /api/v1/feedbacks` — 역할별 범위, 감성 필터, 정렬, 페이징.
-- [ ] `PATCH /api/v1/feedbacks/{id}/status` — 관리자가 `PENDING`/`RESOLVED` 설정.
+- [x] `DELETE /api/v1/threads/{id}` — 소유자 또는 관리자만; 하드/소프트 삭제 문서화.
+- [x] `POST /api/v1/chats/{chatId}/feedbacks` — 본인 채팅(멤버)/모든 채팅(관리자).
+- [x] `(user_id, chat_id)` 유일성 강제(DB 제약 + 서비스 검사 → `409`).
+- [x] `GET /api/v1/feedbacks` — 역할별 범위, 감성 필터, 정렬, 페이징.
+- [x] `PATCH /api/v1/feedbacks/{id}/status` — 관리자가 `PENDING`/`RESOLVED` 설정.
 
 **검증**
 ```bash

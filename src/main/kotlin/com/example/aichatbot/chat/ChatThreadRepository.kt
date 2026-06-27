@@ -5,6 +5,7 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
+import java.util.Optional
 
 interface ChatThreadRepository : JpaRepository<ChatThread, Long> {
     @Query(
@@ -15,4 +16,6 @@ interface ChatThreadRepository : JpaRepository<ChatThread, Long> {
         """,
     )
     fun findActiveThreads(@Param("userId") userId: Long?, pageable: Pageable): Page<ChatThread>
+
+    fun findByIdAndDeletedAtIsNull(id: Long): Optional<ChatThread>
 }
