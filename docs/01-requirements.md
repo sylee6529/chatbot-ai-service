@@ -43,6 +43,21 @@
 | P1-7 | 관리자 전용 CSV 리포트(최근 24시간) | 6 | 00-assumptions F4 | `text/csv`; 멤버 → 403 | 구현됨 |
 | P1-8 | isStreaming=true 시 스트리밍 | 7 | 00-assumptions G1–G2 | SSE 응답; 비스트리밍 불변 | 구현됨 |
 
+## P1-Demo — 시연 설득력 확장
+
+명시 요구사항은 아니지만, 과제 배경의 "향후 자사의 대외비 문서를 학습시키고 싶다"는
+고객 관심사를 MVP1 데모에서 보여주기 위한 제한된 확장입니다. 문서 등록 API나
+파일 업로드 기능은 만들지 않고, 서비스 설명 seed 문서를 기반으로 RAG 흐름만 시연합니다.
+
+| ID | 요구사항 | 단계 | 명세 참조 | 검증 | 상태 |
+|----|----------|------|-----------|------|------|
+| PX-1 | 서비스 설명 문서를 demo knowledge로 seed | 8.5 | 00-assumptions J1–J2 | 앱 기동 후 demo document/chunk 존재 | 계획됨 |
+| PX-2 | 문서 chunking 및 embedding 저장 | 8.5 | 00-assumptions J3–J5, 03-data-model §2.6–2.7 | chunking 단위 테스트, Flyway V2 검증 | 계획됨 |
+| PX-3 | 질문 embedding 기반 topK chunk 검색 | 8.5 | 00-assumptions J4, 03-data-model §4 | retrieval 단위 테스트 | 계획됨 |
+| PX-4 | 채팅 생성 시 `useKnowledgeBase` 옵션 지원, 기본 `true` | 8.5 | 02-api-contract §2.1 | 기존 chat 테스트 + fallback 테스트 | 계획됨 |
+| PX-5 | RAG context를 AI prompt에 주입하고 응답에 `sources` 반환 | 8.5 | 02-api-contract §2.1.2 | prompt context injection 테스트, API 응답 확인 | 계획됨 |
+| PX-6 | 데모 시나리오와 매뉴얼에 문서 기반 답변 캡처 흐름 추가 | 8.5 | 04-demo-scenario §3 | `docs/curl-examples.sh`, `manual.html` 업데이트 | 계획됨 |
+
 ## P2 — 전달 품질
 
 | ID | 요구사항 | 단계 | 명세 참조 | 검증 | 상태 |
@@ -51,7 +66,7 @@
 | P2-2 | AI provider 설정 문서화 | 8 | 00-assumptions D3 | `AI_API_KEY`, `AI_BASE_URL`, `AI_DEFAULT_MODEL` 설명 | 계획됨 |
 | P2-3 | 데모 HTTP/curl 예제 | 8 | docs/demo.http | 파일 존재, 실행 가능 | 계획됨 |
 | P2-4 | 샘플 환경 파일 | 8 | .env.example | 파일 존재, 실제 비밀 없음 | 계획됨 |
-| P2-5 | 향후 확장 노트(RAG, 제공자 전환, 이메일 인증 링크/SMTP, rate limit, audit logs) | 8 | README §Future | 섹션 존재 | 계획됨 |
+| P2-5 | 향후 확장 노트(문서 등록/관리 API, 파일 파싱, pgvector/vector DB, 제공자 전환, 이메일 인증 링크/SMTP, rate limit, audit logs) | 8 | README §Future | 섹션 존재 | 계획됨 |
 | P2-6 | JWT로 보호되는 Swagger / OpenAPI | 8 | springdoc | `/swagger-ui.html`, `/v3/api-docs` | 계획됨 |
 | P2-7 | 헬스 체크 엔드포인트 | 8 | 02-api-contract §개발 편의 | `/api/v1/health` | 계획됨 |
 

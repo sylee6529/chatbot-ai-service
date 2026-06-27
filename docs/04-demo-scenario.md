@@ -4,11 +4,13 @@
 확인 포인트를 포함합니다. 이 시나리오는 `docs/curl-examples.sh`/`docs/demo.http`
 (Phase 8)와 `docs/manual.html`의 데모 섹션의 기준이 됩니다.
 
-**흐름**: 회원가입 → 로그인 → 채팅 생성 → 30분 이내 두 번째 채팅 →
-스레드별 그룹핑 목록 → 피드백 생성 → 관리자 일일 활동 → 관리자 CSV 리포트.
+**흐름**: 회원가입 → 로그인 → Demo Knowledge Base 기반 채팅 →
+30분 이내 후속 채팅 → 스레드별 그룹핑 목록 → 피드백 생성 →
+관리자 일일 활동 → 관리자 CSV 리포트.
 
 > 전제: 앱이 `localhost:8080`에서 구동 중이고 서버의 AI provider 연동이 완료되어 있습니다.
 > `AI_API_KEY`가 비어 있으면 외부 provider 대신 키 미설정을 명시하는 deterministic fallback 답변이 반환됩니다.
+> Demo Knowledge Base는 문서 등록 API 없이 서비스 설명 seed 문서로 시연합니다.
 
 ---
 
@@ -59,25 +61,38 @@ curl -s -o /dev/null -w '%{http_code}\n' localhost:8080/api/v1/chats   # 401
 
 ---
 
-## 3. 첫 채팅 생성 → 새 스레드 생성
+## 3. 첫 채팅 생성 → Demo Knowledge Base 기반 답변 + 새 스레드 생성
 
 ```bash
 curl -s -XPOST localhost:8080/api/v1/chats -H "Authorization: Bearer $TOKEN" \
   -H 'Content-Type: application/json' \
-  -d '{"question":"벡터 데이터베이스가 뭐야?"}'
+  -d '{"question":"이 챗봇 서비스는 어떤 기능을 제공해?","useKnowledgeBase":true}'
 ```
 
 기대 `201`:
 ```json
 {
   "chatId": 10, "threadId": 3,
-  "question": "벡터 데이터베이스가 뭐야?",
-  "answer": "...", "model": "...", "createdAt": "..."
+  "question": "이 챗봇 서비스는 어떤 기능을 제공해?",
+  "answer": "이 서비스는 회원가입/로그인, JWT 인증, 30분 단위 대화 스레드, AI 채팅, 피드백, 관리자 리포트를 제공합니다.",
+  "model": "...",
+  "createdAt": "...",
+  "sources": [
+    { "documentTitle": "AIChatbot 서비스 설명", "chunkIndex": 1 }
+  ]
 }
 ```
 
-확인: 이전 채팅이 없었으므로 새 스레드가 생성됩니다.
-`threadId`를 기록해 둡니다.
+확인:
+- 이전 채팅이 없었으므로 새 스레드가 생성됩니다. `threadId`를 기록해 둡니다.
+- 답변이 일반 LLM 지식이 아니라 서비스 설명 문서 기반으로 구성됩니다.
+- `sources`에 참고 문서 제목과 chunk index가 포함됩니다.
+
+캡처 포인트:
+```text
+"회사 문서를 학습시켰다"가 아니라,
+"등록된 서비스 설명 문서에서 관련 내용을 찾아 AI 요청 context에 포함했다"는 RAG 흐름.
+```
 
 ---
 
@@ -86,7 +101,7 @@ curl -s -XPOST localhost:8080/api/v1/chats -H "Authorization: Bearer $TOKEN" \
 ```bash
 curl -s -XPOST localhost:8080/api/v1/chats -H "Authorization: Bearer $TOKEN" \
   -H 'Content-Type: application/json' \
-  -d '{"question":"예시를 들어줘."}'
+  -d '{"question":"그 내용을 고객사에 보낼 안내 메일 형태로 정리해줘."}'
 ```
 
 기대 `201`:
@@ -95,7 +110,8 @@ curl -s -XPOST localhost:8080/api/v1/chats -H "Authorization: Bearer $TOKEN" \
 ```
 
 확인: **`threadId`가 3단계와 동일**합니다. 30분 규칙이 최신 채팅을
-30분 이내로 보고 스레드를 재사용함을 증명합니다.
+30분 이내로 보고 스레드를 재사용함을 증명합니다. 또한 이전 대화 history와
+Demo Knowledge Base context를 함께 활용하는 후속 질문 흐름을 보여줍니다.
 
 > 30분 초과 후 재사용 안 됨을 보이려면: 30분 규칙은 단위 테스트로 시간을
 > 제어해 검증합니다(라이브에서 30분 대기 불필요).
@@ -110,7 +126,7 @@ curl -s "localhost:8080/api/v1/chats?page=0&size=20&sort=createdAt,desc" \
 ```
 
 기대 `200`: 하나의 스레드(`threadId: 3`) 아래에 두 채팅(10, 11)이
-그룹핑되어 반환.
+그룹핑되어 반환. 문서 기반 답변에는 `sources`가 함께 포함됩니다.
 
 확인: 두 메시지가 **하나의 스레드 아래** 묶임. 정렬/페이지네이션 동작.
 멤버는 본인 스레드만 봄.
@@ -186,8 +202,8 @@ curl -s localhost:8080/api/v1/admin/reports/chats.csv \
 기대: `Content-Type: text/csv`, `Content-Disposition: attachment; ...`, 본문:
 ```
 chat_id,thread_id,user_id,user_email,user_name,model,question,answer,chat_created_at
-10,3,1,alice@example.com,Alice,...,"벡터 데이터베이스가 뭐야?","...",...
-11,3,1,alice@example.com,Alice,...,"예시를 들어줘.","...",...
+10,3,1,alice@example.com,Alice,...,"이 챗봇 서비스는 어떤 기능을 제공해?","...",...
+11,3,1,alice@example.com,Alice,...,"그 내용을 고객사에 보낼 안내 메일 형태로 정리해줘.","...",...
 ```
 
 확인: 두 채팅이 생성 사용자(`alice@example.com`, `Alice`)와 함께 포함. 멤버 → `403`.
@@ -215,8 +231,8 @@ curl -N -XPOST localhost:8080/api/v1/chats -H "Authorization: Bearer $TOKEN" \
 - [ ] 헬스 `UP`, Swagger 토큰 인증 후 접근 가능
 - [ ] 회원가입 → `MEMBER`
 - [ ] 로그인 → JWT, 토큰 없으면 `401`
-- [ ] 첫 채팅 → 새 `threadId`
-- [ ] 둘째 채팅(30분 이내) → 같은 `threadId`
+- [ ] 첫 채팅 → Demo Knowledge Base 기반 답변 + `sources` + 새 `threadId`
+- [ ] 둘째 채팅(30분 이내) → 같은 `threadId` + 후속 질문 답변
 - [ ] 목록 → 하나의 스레드에 두 채팅 그룹핑
 - [ ] 피드백 생성 → `201`, 중복 → `409`
 - [ ] 멤버의 관리자 엔드포인트 → `403`

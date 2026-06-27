@@ -1,6 +1,7 @@
 package com.example.aichatbot.chat
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.example.aichatbot.knowledge.ChatSourceResponse
 import java.time.Instant
 
 data class CreateChatRequest(
@@ -11,6 +12,8 @@ data class CreateChatRequest(
     @param:JsonProperty("isStreaming")
     @field:JsonProperty("isStreaming")
     val streaming: Boolean = false,
+
+    val useKnowledgeBase: Boolean? = null,
 )
 
 data class CreateChatResponse(
@@ -20,6 +23,7 @@ data class CreateChatResponse(
     val answer: String,
     val model: String,
     val createdAt: Instant,
+    val sources: List<ChatSourceResponse> = emptyList(),
 )
 
 data class ThreadChatsResponse(
@@ -36,4 +40,5 @@ data class ChatItemResponse(
     val answer: String,
     val model: String?,
     val createdAt: Instant,
+    val sources: List<ChatSourceResponse> = emptyList(),
 )

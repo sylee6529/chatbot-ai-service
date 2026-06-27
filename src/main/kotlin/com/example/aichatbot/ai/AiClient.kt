@@ -16,6 +16,7 @@ data class AiContextMessage(
 )
 
 enum class AiMessageRole {
+    SYSTEM,
     USER,
     ASSISTANT,
 }

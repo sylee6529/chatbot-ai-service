@@ -22,7 +22,13 @@ TOKEN=$(curl -s -XPOST "$BASE_URL/api/v1/auth/login" \
 curl -s -XPOST "$BASE_URL/api/v1/chats" \
   -H "Authorization: Bearer $TOKEN" \
   -H 'Content-Type: application/json' \
-  -d '{"question":"첫 번째 질문입니다."}'
+  -d '{"question":"이 챗봇 서비스는 어떤 기능을 제공해?","useKnowledgeBase":true}'
+echo
+
+curl -s -XPOST "$BASE_URL/api/v1/chats" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"question":"그 내용을 고객사에 보낼 안내 메일 형태로 정리해줘."}'
 echo
 
 curl -s "$BASE_URL/api/v1/chats?page=0&size=10&sort=createdAt,desc" \

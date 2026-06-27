@@ -6,7 +6,7 @@
 범례: `[ ]` 미시작 · `[~]` 진행 중 · `[x]` 완료
 
 우선순위 매핑(과제 기준): **P0** = Phase 1–4 + 문서 · **P1** =
-Phase 5–7 · **P2** = Phase 8.
+Phase 5–7 · **P1-Demo** = Phase 8.5 · **P2** = Phase 8.
 
 ---
 
@@ -204,7 +204,7 @@ curl -N -XPOST localhost:8080/api/v1/chats -H "Authorization: Bearer $TOKEN" \
 - [x] `.env.example`.
 - [x] `README.md` 완성(개요, 실행, 환경, 테스트, 문서 링크, 체크리스트,
       가정, 향후 확장).
-- [x] 향후 개선 목록: RAG, 다중 제공자, refresh token, 이메일 인증 링크, rate limit, audit logs.
+- [x] 향후 개선 목록: 문서 등록/관리 API, 파일 파싱, pgvector/vector DB, 다중 제공자, refresh token, 이메일 인증 링크, rate limit, audit logs.
 
 **검증**
 ```bash
@@ -213,6 +213,73 @@ ls README.md .env.example docs/curl-examples.sh
 ```
 
 **문서 업데이트**: 모든 문서 확정.
+
+---
+
+## Phase 8.5 — Demo Knowledge Base / 미니 RAG 시연  (P1-Demo)
+
+목표: 문서 등록 API 없이, 현재 챗봇 서비스 설명 문서를 seed/demo knowledge로 넣고
+문서 기반 답변 흐름을 캡처 가능한 데모로 만든다. 이 기능은 fine-tuning이나 문서 학습이
+아니라, 관련 chunk를 검색해 AI 요청 context에 포함하는 RAG 데모다.
+
+**범위**
+- [x] 문서 등록/삭제 API는 만들지 않는다.
+- [x] PDF/Word parsing, 문서별 ACL, tenant 분리, 비동기 indexing queue, pgvector는 하지 않는다.
+- [x] 서비스 설명 문서 1개를 demo knowledge로 seed한다.
+- [x] `useKnowledgeBase` 기본값은 `true`; 문서가 없거나 관련 chunk가 없으면 일반 chat으로 fallback한다.
+
+**산출물**
+- [x] Flyway `V2__demo_knowledge_base.sql`
+      - `demo_documents`
+      - `document_chunks`
+      - `chat_document_sources`
+- [x] `knowledge` 패키지
+      - `DemoDocument`, `DocumentChunk`, `ChatDocumentSource` 엔티티
+      - repository
+      - `DocumentChunker`
+      - `KnowledgeContextService`
+      - cosine similarity 유틸
+- [x] `EmbeddingClient` 인터페이스
+      - OpenAI-compatible embedding 구현
+      - local/test용 `FakeEmbeddingClient`
+- [x] demo seed
+      - title: `AIChatbot 서비스 설명`
+      - content: MVP1 기능 설명(인증, JWT, 30분 스레드, 채팅, 피드백, 관리자 리포트, 스트리밍)
+      - 앱 기동 시 중복 없이 chunk/embedding 생성
+- [x] `ChatCreateRequest`에 `useKnowledgeBase: Boolean?` 추가
+- [x] 채팅 생성 흐름 변경
+      - 질문 embedding 생성
+      - 관련 chunk topK 검색
+      - AI prompt에 context 주입
+      - 저장된 chat에 source metadata 연결
+      - 응답에 `sources` 포함
+- [x] 기존 채팅 목록 응답에도 저장된 `sources` 포함
+- [x] `docs/curl-examples.sh` 또는 `docs/demo.http`에 RAG 데모 호출 추가
+- [x] `docs/manual.html`에 "문서 기반 답변 데모" 섹션 및 캡처 흐름 추가
+- [x] README에 Demo Knowledge Base 설명과 운영 확장 경로 추가
+
+**검증**
+```bash
+./gradlew test --tests '*Knowledge*'
+./gradlew test --tests '*Chat*'
+./gradlew clean test
+
+curl -s -XPOST localhost:8080/api/v1/chats \
+  -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"question":"이 챗봇 서비스는 어떤 기능을 제공해?","useKnowledgeBase":true}'
+```
+
+확인 기준:
+- [x] 응답에 `sources[0].documentTitle == "AIChatbot 서비스 설명"` 포함
+- [x] 같은 질문에서 `useKnowledgeBase=false`면 `sources`가 비어 있음
+- [x] demo knowledge가 비어도 채팅 생성은 실패하지 않고 일반 답변으로 fallback
+- [x] `AI_API_KEY`가 없는 test/local에서도 fake embedding으로 테스트 통과
+- [x] README/manual에서 "문서 학습" 또는 fine-tuning으로 과장하지 않음
+
+**문서 업데이트**: `docs/00-assumptions.md` J, `docs/01-requirements.md`
+P1-Demo, `docs/02-api-contract.md` §2.1, `docs/03-data-model.md` §2.6–2.8,
+`docs/04-demo-scenario.md`, `docs/manual.html`, README.
 
 ---
 

@@ -8,6 +8,12 @@ import com.example.aichatbot.common.BadRequestException
 import com.example.aichatbot.common.ForbiddenException
 import com.example.aichatbot.common.NotFoundException
 import com.example.aichatbot.common.PageResponse
+import com.example.aichatbot.knowledge.ChatDocumentSource
+import com.example.aichatbot.knowledge.ChatDocumentSourceRepository
+import com.example.aichatbot.knowledge.ChatSourceResponse
+import com.example.aichatbot.knowledge.DocumentChunkRepository
+import com.example.aichatbot.knowledge.KnowledgeContextService
+import com.example.aichatbot.knowledge.RetrievedKnowledgeSource
 import com.example.aichatbot.report.ActivityLogService
 import com.example.aichatbot.report.ActivityType
 import com.example.aichatbot.user.Role
@@ -31,7 +37,10 @@ class ChatService(
     private val userRepository: UserRepository,
     private val threadRepository: ChatThreadRepository,
     private val chatRepository: ChatRepository,
+    private val documentChunkRepository: DocumentChunkRepository,
+    private val chatDocumentSourceRepository: ChatDocumentSourceRepository,
     private val aiClient: AiClient,
+    private val knowledgeContextService: KnowledgeContextService,
     private val activityLogService: ActivityLogService,
     private val clock: Clock,
     transactionManager: PlatformTransactionManager,
@@ -48,7 +57,11 @@ class ChatService(
         }
 
         val model = normalizeModel(request.model)
-        val context = loadContextSnapshot(userId)
+        val knowledgeContext = knowledgeContextService.retrieve(
+            question = question,
+            enabled = request.useKnowledgeBase ?: true,
+        )
+        val context = knowledgeContext.messages + loadContextSnapshot(userId)
         val aiResponse = aiClient.generate(
             AiGenerateRequest(
                 question = question,
@@ -57,7 +70,7 @@ class ChatService(
             ),
         )
 
-        return saveChat(userId, question, aiResponse.answer, aiResponse.model)
+        return saveChat(userId, question, aiResponse.answer, aiResponse.model, knowledgeContext.sources)
     }
 
     fun createStreamingChat(userId: Long, request: CreateChatRequest): SseEmitter {
@@ -70,18 +83,22 @@ class ChatService(
         val emitter = SseEmitter(60_000L)
         CompletableFuture.runAsync {
             try {
+                val knowledgeContext = knowledgeContextService.retrieve(
+                    question = question,
+                    enabled = request.useKnowledgeBase ?: true,
+                )
                 val context = loadContextSnapshot(userId)
                 val aiResponse = aiClient.generate(
                     AiGenerateRequest(
                         question = question,
-                        context = context,
+                        context = knowledgeContext.messages + context,
                         model = model,
                     ),
                 )
                 aiResponse.answer.chunked(32).ifEmpty { listOf("") }.forEach {
                     emitter.send(SseEmitter.event().name("chunk").data(mapOf("delta" to it)))
                 }
-                val saved = saveChat(userId, question, aiResponse.answer, aiResponse.model)
+                val saved = saveChat(userId, question, aiResponse.answer, aiResponse.model, knowledgeContext.sources)
                 emitter.send(
                     SseEmitter.event()
                         .name("done")
@@ -132,11 +149,29 @@ class ChatService(
             PageRequest.of(page, size, Sort.by(sortSpec.direction, sortSpec.property)),
         )
         val threadIds = threadsPage.content.mapNotNull { it.id }
-        val chatsByThreadId = if (threadIds.isEmpty()) {
-            emptyMap()
+        val chats = if (threadIds.isEmpty()) {
+            emptyList()
         } else {
             chatRepository.findByThreadIdInAndDeletedAtIsNullOrderByCreatedAtAsc(threadIds)
-                .groupBy { requireNotNull(it.thread.id) }
+        }
+        val chatsByThreadId = if (chats.isEmpty()) {
+            emptyMap()
+        } else {
+            chats.groupBy { requireNotNull(it.thread.id) }
+        }
+        val sourcesByChatId = if (chats.isEmpty()) {
+            emptyMap()
+        } else {
+            chatDocumentSourceRepository.findByChatIdInOrderByIdAsc(chats.mapNotNull { it.id })
+                .groupBy { requireNotNull(it.chat.id) }
+                .mapValues { (_, sources) ->
+                    sources.map {
+                        ChatSourceResponse(
+                            documentTitle = it.documentTitle,
+                            chunkIndex = it.chunkIndex,
+                        )
+                    }
+                }
         }
         val content = threadsPage.content.map { thread ->
             ThreadChatsResponse(
@@ -144,7 +179,9 @@ class ChatService(
                 userId = requireNotNull(thread.user.id),
                 createdAt = thread.createdAt,
                 updatedAt = thread.updatedAt,
-                chats = chatsByThreadId[requireNotNull(thread.id)].orEmpty().map { it.toItemResponse() },
+                chats = chatsByThreadId[requireNotNull(thread.id)].orEmpty().map {
+                    it.toItemResponse(sourcesByChatId[requireNotNull(it.id)].orEmpty())
+                },
             )
         }
 
@@ -167,7 +204,13 @@ class ChatService(
             }
         } ?: emptyList()
 
-    private fun saveChat(userId: Long, question: String, answer: String, model: String): CreateChatResponse =
+    private fun saveChat(
+        userId: Long,
+        question: String,
+        answer: String,
+        model: String,
+        knowledgeSources: List<RetrievedKnowledgeSource>,
+    ): CreateChatResponse =
         requireNotNull(
             transactionTemplate.execute {
                 val user = userRepository.findActiveByIdForUpdate(userId)
@@ -186,6 +229,18 @@ class ChatService(
                         createdAt = now,
                     ),
                 )
+                knowledgeSources.forEach { source ->
+                    chatDocumentSourceRepository.save(
+                        ChatDocumentSource(
+                            chat = chat,
+                            documentChunk = documentChunkRepository.getReferenceById(source.chunkId),
+                            documentTitle = source.documentTitle,
+                            chunkIndex = source.chunkIndex,
+                            score = source.score,
+                            createdAt = now,
+                        ),
+                    )
+                }
                 activityLogService.record(user, ActivityType.CHAT_CREATED)
 
                 CreateChatResponse(
@@ -195,6 +250,12 @@ class ChatService(
                     answer = chat.answer,
                     model = requireNotNull(chat.model),
                     createdAt = chat.createdAt,
+                    sources = knowledgeSources.map {
+                        ChatSourceResponse(
+                            documentTitle = it.documentTitle,
+                            chunkIndex = it.chunkIndex,
+                        )
+                    },
                 )
             },
         )
@@ -264,11 +325,12 @@ private fun parseSort(sort: String?): ThreadSortSpec {
     return ThreadSortSpec(property = "createdAt", direction = direction, raw = "createdAt,${parts[1].lowercase()}")
 }
 
-private fun Chat.toItemResponse(): ChatItemResponse =
+private fun Chat.toItemResponse(sources: List<ChatSourceResponse>): ChatItemResponse =
     ChatItemResponse(
         chatId = requireNotNull(id),
         question = question,
         answer = answer,
         model = model,
         createdAt = createdAt,
+        sources = sources,
     )

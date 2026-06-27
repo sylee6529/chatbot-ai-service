@@ -94,6 +94,21 @@ AI 챗봇 서비스 구현 전에 확정한 도메인, API, 데이터 저장 방
 | I6 | `/api/v1/health`는 공개하고, Swagger/OpenAPI 문서는 JWT 인증을 요구한다. | 상태 확인은 열어두되 API 문서는 보호 엔드포인트와 같은 정책을 적용한다. |
 | I7 | 시각 표현: **ISO-8601 UTC** 문자열. | 클라이언트 간 명확. |
 
+## J. Demo Knowledge Base / 미니 RAG 시연
+
+| # | 결정 | 설명 |
+|---|------|------|
+| J1 | MVP1에는 **문서 등록 API를 만들지 않는다**. 대신 현재 챗봇 서비스 설명 문서를 seed/demo knowledge로 등록한다. | 요구사항 밖의 문서 관리 기능으로 범위를 키우지 않고, 고객사의 "향후 내부/대외비 문서 기반 응답" 니즈를 시연 흐름으로만 뒷받침한다. |
+| J2 | 명칭은 **Demo Knowledge Base** 또는 **문서 기반 답변 데모**로 사용한다. "문서를 학습시켰다"거나 fine-tuning이라고 설명하지 않는다. | 실제 동작은 모델 학습이 아니라, 등록된 문서 조각을 검색해 AI 요청 context에 포함하는 RAG 방식이다. |
+| J3 | demo document는 plain text를 chunk로 나누고, chunk embedding을 PostgreSQL에 저장한다. | PostgreSQL 15.8 기본 환경에서 동작해야 하므로 `pgvector` 의존성은 두지 않는다. |
+| J4 | embedding은 `TEXT` JSON 문자열로 저장하고, 검색은 애플리케이션에서 cosine similarity로 수행한다. | 시연용 소량 chunk에는 충분하며, 대량 검색 최적화는 향후 pgvector/vector DB 전환 대상으로 둔다. |
+| J5 | `EmbeddingClient` 경계를 두고 OpenAI-compatible embedding 구현과 local/test용 fake 구현을 분리한다. `document_chunks.embedding_model`에 사용 모델을 저장한다. | seed 시점과 질의 시점의 embedding 공간이 달라지면 cosine score가 무의미해지므로, 모델이 바뀌면 앱 시딩 단계에서 chunk embedding을 재생성한다. |
+| J6 | 채팅 생성 요청에 선택 필드 `useKnowledgeBase`를 추가하고 기본값은 `true`로 둔다. | 데모에서 사용자가 일반 질문을 했을 때 문서 기반 답변이 자연스럽게 보이게 하려는 의도적 비용/지연 트레이드오프다. 해당 embedding model의 chunk가 없으면 질문 embedding 호출 없이 일반 chat으로 fallback한다. |
+| J7 | RAG context는 현재 질문과 관련된 topK chunk만 AI prompt에 주입하고, 응답에는 참고 source metadata를 포함한다. | 답변 근거를 캡처로 보여줄 수 있어 시연 설득력이 높아진다. |
+| J8 | 질문 embedding 생성, chunk 검색, AI 호출은 사용자 row lock 및 채팅 저장 트랜잭션 밖에서 수행한다. `chat_document_sources` 저장만 채팅 저장 트랜잭션 안에서 수행한다. | Phase 3에서 정한 "외부 AI 호출을 user lock/tx 밖에 둔다"는 성능/동시성 결정을 RAG에도 동일하게 적용한다. |
+| J9 | `V2__demo_knowledge_base.sql`은 테이블만 만든다. demo 문서 chunk와 embedding은 `ApplicationRunner` 앱 시딩으로 생성한다. | embedding은 provider/API key/모델에 의존하므로 SQL 마이그레이션에 벡터값이나 비밀 정보를 넣지 않는다. |
+| J10 | 이번 범위에서 제외: PDF/Word parsing, 문서 등록/삭제 API, 문서별 ACL, tenant 분리, 비동기 indexing queue, 문서 버전 관리, fine-tuning. | 운영 전환 단계에서 확장 가능한 구조로 남기되 MVP1 범위를 유지한다. |
+
 ---
 
 ## 확정 결정 요약
@@ -103,6 +118,7 @@ AI 챗봇 서비스 구현 전에 확정한 도메인, API, 데이터 저장 방
 - **유니크 제약** — soft-deleted row의 unique key도 재사용하지 않는다. H2 호환성을 위해 partial unique index에 의존하지 않는다.
 - **30분 동시성** — 채팅 생성 시 사용자 row lock으로 사용자별 요청을 직렬화한다.
 - **CSV 리포트** — 컬럼은 `chat_id`, `thread_id`, `user_id`, `user_email`, `user_name`, `model`, `question`, `answer`, `chat_created_at`으로 고정한다.
+- **Demo Knowledge Base** — 문서 등록 API 없이 서비스 설명 seed 문서를 기반으로 미니 RAG 시연을 제공한다. 이는 fine-tuning이 아니라 검색된 chunk를 AI context에 포함하는 방식이다.
 
 ## 향후 개선 목록
 
@@ -110,5 +126,5 @@ AI 챗봇 서비스 구현 전에 확정한 도메인, API, 데이터 저장 방
 - 이메일 인증 링크(SMTP 연동)
 - rate limiting
 - audit log 고도화
-- RAG / 문서 학습
+- 문서 등록/관리 API, 파일 파싱, pgvector/vector DB, 문서별 ACL
 - 다중 AI 제공자

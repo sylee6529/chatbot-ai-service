@@ -40,8 +40,8 @@ class ChatIntegrationTest(
     fun `create chat creates new thread then reuses it within thirty minutes`() {
         val user = createUser("thread-reuse")
 
-        val first = chatService.createChat(user.id!!, CreateChatRequest(question = "Hello"))
-        val second = chatService.createChat(user.id!!, CreateChatRequest(question = "Again"))
+        val first = chatService.createChat(user.id!!, CreateChatRequest(question = "Hello", useKnowledgeBase = false))
+        val second = chatService.createChat(user.id!!, CreateChatRequest(question = "Again", useKnowledgeBase = false))
 
         assertEquals(first.threadId, second.threadId)
         assertEquals(
@@ -76,7 +76,7 @@ class ChatIntegrationTest(
             ),
         )
 
-        val created = chatService.createChat(user.id!!, CreateChatRequest(question = "New question"))
+        val created = chatService.createChat(user.id!!, CreateChatRequest(question = "New question", useKnowledgeBase = false))
 
         assertNotEquals(oldThread.id, created.threadId)
         assertEquals(0, aiClient.requests.single().context.size)
@@ -88,12 +88,38 @@ class ChatIntegrationTest(
 
         val response = chatService.createChat(
             user.id!!,
-            CreateChatRequest(question = "Use model", model = "gpt-test"),
+            CreateChatRequest(question = "Use model", model = "gpt-test", useKnowledgeBase = false),
         )
 
         assertEquals("gpt-test", aiClient.requests.single().model)
         assertEquals("fake-model:gpt-test", response.model)
         assertEquals("answer: Use model", response.answer)
+    }
+
+    @Test
+    fun `create chat injects demo knowledge context and stores sources`() {
+        val user = createUser("knowledge-chat")
+
+        val response = chatService.createChat(
+            user.id!!,
+            CreateChatRequest(question = "이 챗봇 서비스는 어떤 기능을 제공해?"),
+        )
+
+        assertEquals(1, aiClient.requests.size)
+        assertEquals("SYSTEM", aiClient.requests.single().context.first().role.name)
+        assert(aiClient.requests.single().context.first().content.contains("CONTEXT"))
+        assert(response.sources.isNotEmpty())
+        assertEquals("AIChatbot 서비스 설명", response.sources.first().documentTitle)
+
+        val threads = chatService.getThreadChats(
+            currentUserId = user.id!!,
+            currentUserRole = Role.MEMBER,
+            requestedUserId = null,
+            page = 0,
+            size = 20,
+            sort = null,
+        )
+        assertEquals(response.sources, threads.content.single().chats.single().sources)
     }
 
     private fun createUser(prefix: String): User =
