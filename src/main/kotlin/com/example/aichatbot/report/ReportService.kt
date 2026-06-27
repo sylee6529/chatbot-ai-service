@@ -35,6 +35,7 @@ class ReportService(
         val start = end.minus(Duration.ofHours(24))
         val rows = activityLogRepository.findChatReportRows(start, end)
         return buildString {
+            append('\uFEFF')
             appendLine("chat_id,thread_id,user_id,user_email,user_name,model,question,answer,chat_created_at")
             rows.forEach {
                 appendLine(
@@ -61,5 +62,8 @@ class ReportService(
     }
 
     private fun csv(value: String): String =
-        "\"${value.replace("\"", "\"\"")}\""
+        "\"${sanitizeFormula(value).replace("\"", "\"\"")}\""
+
+    private fun sanitizeFormula(value: String): String =
+        if (value.firstOrNull() in setOf('=', '+', '-', '@')) "'$value" else value
 }

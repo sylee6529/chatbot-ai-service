@@ -1,0 +1,1588 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Chat Console</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --panel-soft: #f9fafb;
+      --line: #d9dee7;
+      --line-strong: #c5cedb;
+      --text: #182230;
+      --muted: #667085;
+      --accent: #0f766e;
+      --accent-dark: #115e59;
+      --danger: #b42318;
+      --warning: #b54708;
+      --shadow: 0 10px 24px rgba(16, 24, 40, 0.08);
+      --radius: 8px;
+      --sidebar: 300px;
+      --admin: 360px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; }
+    body {
+      margin: 0;
+      color: var(--text);
+      background: var(--bg);
+      font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+        "Malgun Gothic", "Segoe UI", Roboto, sans-serif;
+      letter-spacing: 0;
+    }
+    button, input, textarea, select {
+      font: inherit;
+      letter-spacing: 0;
+    }
+    button {
+      border: 1px solid var(--line-strong);
+      background: var(--panel);
+      color: var(--text);
+      border-radius: 6px;
+      min-height: 34px;
+      padding: 7px 11px;
+      cursor: pointer;
+    }
+    button:hover { background: #f3f6f8; }
+    button.primary {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #fff;
+    }
+    button.primary:hover { background: var(--accent-dark); }
+    button.danger {
+      border-color: #fecdca;
+      color: var(--danger);
+    }
+    button.icon {
+      width: 34px;
+      padding: 0;
+      display: inline-grid;
+      place-items: center;
+    }
+    input, textarea, select {
+      width: 100%;
+      border: 1px solid var(--line-strong);
+      border-radius: 6px;
+      background: #fff;
+      color: var(--text);
+      padding: 9px 10px;
+      outline: none;
+    }
+    input:focus, textarea:focus, select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+    }
+    label {
+      display: block;
+      margin: 0 0 6px;
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.86rem;
+    }
+    th, td {
+      border-bottom: 1px solid var(--line);
+      padding: 9px 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      color: var(--muted);
+      background: var(--panel-soft);
+      font-weight: 800;
+    }
+
+    .login-shell {
+      min-height: 100%;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+    .login-panel {
+      width: min(420px, 100%);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 28px;
+    }
+    .login-panel h1 {
+      margin: 0 0 6px;
+      font-size: 1.45rem;
+      line-height: 1.25;
+    }
+    .login-panel p {
+      margin: 0 0 22px;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+    .field { margin-bottom: 14px; }
+    .auth-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-top: 18px;
+    }
+    .auth-actions button { flex: 1; }
+
+    .app {
+      min-height: 100%;
+      display: grid;
+      grid-template-columns: var(--sidebar) minmax(0, 1fr) var(--admin);
+      grid-template-rows: 58px auto;
+    }
+    .topbar {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 0 18px;
+      border-bottom: 1px solid var(--line);
+      background: var(--panel);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+    .mark {
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      border-radius: 6px;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 900;
+    }
+    .brand h1 {
+      margin: 0;
+      font-size: 1rem;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+    .account {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .account strong { color: var(--text); }
+
+    .sidebar {
+      border-right: 1px solid var(--line);
+      background: var(--panel);
+      display: flex;
+      flex-direction: column;
+    }
+    .side-head {
+      padding: 14px;
+      border-bottom: 1px solid var(--line);
+      font-weight: 900;
+    }
+    .thread-tools {
+      display: flex;
+      justify-content: flex-end;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+    }
+    .thread-tools select { width: 112px; }
+    .thread-list {
+      padding: 8px;
+    }
+    .thread-item {
+      width: 100%;
+      text-align: left;
+      border: 1px solid transparent;
+      background: transparent;
+      border-radius: 6px;
+      padding: 10px;
+      display: grid;
+      gap: 5px;
+      min-height: 72px;
+    }
+    .thread-item:hover { background: var(--panel-soft); }
+    .thread-item.active {
+      border-color: #99d6cf;
+      background: #ecfdf9;
+    }
+    .thread-title {
+      font-weight: 800;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+    .thread-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+    .thread-preview {
+      color: var(--muted);
+      font-size: 0.84rem;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .main {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      background: #fff;
+    }
+    .chat-head {
+      min-height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--line);
+      background: var(--panel);
+    }
+    .chat-head h2 {
+      margin: 0;
+      font-size: 1rem;
+      line-height: 1.25;
+    }
+    .chat-head p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 0.84rem;
+    }
+    .chat-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .messages {
+      flex: none;
+      min-height: 420px;
+      padding: 22px 20px;
+      background:
+        linear-gradient(#fff, #fff) padding-box,
+        repeating-linear-gradient(0deg, transparent, transparent 31px, rgba(24, 34, 48, 0.03) 32px);
+    }
+    .message {
+      max-width: 780px;
+      margin: 0 auto 18px;
+      display: grid;
+      gap: 8px;
+    }
+    .message.user { justify-items: end; }
+    .message.ai { justify-items: start; }
+    .streaming-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--muted);
+      font-size: 0.84rem;
+      padding: 0 2px;
+    }
+    .streaming-indicator span {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--muted);
+      animation: pulse 1.1s infinite ease-in-out;
+    }
+    .streaming-indicator span:nth-child(2) { animation-delay: 0.16s; }
+    .streaming-indicator span:nth-child(3) { animation-delay: 0.32s; }
+    @keyframes pulse {
+      0%, 80%, 100% { opacity: 0.28; transform: translateY(0); }
+      40% { opacity: 1; transform: translateY(-2px); }
+    }
+    .bubble {
+      width: fit-content;
+      max-width: min(680px, 100%);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px 14px;
+      line-height: 1.6;
+      font-size: 0.95rem;
+      background: var(--panel);
+    }
+    .message.user .bubble {
+      background: #0f766e;
+      color: #fff;
+      border-color: #0f766e;
+    }
+    .message-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+    .feedback-actions {
+      display: flex;
+      gap: 6px;
+      justify-content: flex-start;
+      width: fit-content;
+    }
+    .feedback-actions button {
+      width: 32px;
+      min-height: 32px;
+      padding: 0;
+      display: inline-grid;
+      place-items: center;
+      font-size: 1rem;
+    }
+    .feedback-actions button.selected {
+      border-color: var(--accent);
+      color: var(--accent-dark);
+      background: #ecfdf9;
+      font-weight: 800;
+    }
+    .composer {
+      border-top: 1px solid var(--line);
+      background: var(--panel);
+      padding: 14px 18px;
+    }
+    .composer-inner {
+      max-width: 980px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 154px 40px;
+      gap: 10px;
+      align-items: center;
+      border: 1px solid var(--line-strong);
+      border-radius: 8px;
+      padding: 8px;
+      background: #fff;
+    }
+    .composer textarea {
+      min-height: 40px;
+      max-height: 120px;
+      resize: vertical;
+      border: 0;
+      padding: 9px 10px;
+      box-shadow: none;
+    }
+    .composer textarea:focus {
+      border: 0;
+      box-shadow: none;
+    }
+    .composer select {
+      min-height: 38px;
+      border-color: var(--line);
+    }
+    .composer .send-button {
+      width: 40px;
+      min-height: 40px;
+      padding: 0;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 1.15rem;
+      line-height: 1;
+    }
+    .switch-line {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 0.82rem;
+      margin-top: 8px;
+    }
+    .switch-line input { width: auto; }
+
+    .admin-panel {
+      border-left: 1px solid var(--line);
+      background: var(--panel);
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .panel-section {
+      padding: 16px;
+      border-bottom: 1px solid var(--line);
+    }
+    .panel-section h2 {
+      margin: 0 0 12px;
+      font-size: 0.98rem;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .stat {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 10px;
+      background: var(--panel-soft);
+    }
+    .stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.74rem;
+      margin-bottom: 4px;
+    }
+    .stat strong { font-size: 1.2rem; }
+    .filters {
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .filters select {
+      width: auto;
+      min-width: 104px;
+      max-width: 150px;
+      min-height: 32px;
+      padding: 6px 28px 6px 9px;
+      font-size: 0.82rem;
+    }
+    .feedback-list {
+      display: grid;
+      gap: 10px;
+    }
+    .feedback-row {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 10px;
+      background: #fff;
+      display: grid;
+      gap: 8px;
+    }
+    .feedback-row p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.84rem;
+      line-height: 1.45;
+    }
+    .feedback-row button {
+      width: fit-content;
+      min-height: 30px;
+      padding: 5px 9px;
+      font-size: 0.8rem;
+    }
+    .row-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 0.82rem;
+      font-weight: 800;
+    }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid var(--line-strong);
+      border-radius: 999px;
+      padding: 2px 8px;
+      color: var(--muted);
+      font-size: 0.74rem;
+      white-space: nowrap;
+    }
+    .status.resolved {
+      border-color: #abefc6;
+      color: #067647;
+      background: #ecfdf3;
+    }
+    .empty {
+      color: var(--muted);
+      padding: 20px;
+      text-align: center;
+      font-size: 0.9rem;
+    }
+    .toast {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      max-width: 420px;
+      padding: 12px 14px;
+      border: 1px solid var(--line-strong);
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: var(--shadow);
+      color: var(--text);
+      display: none;
+      z-index: 10;
+    }
+
+    @media (max-width: 1180px) {
+      .app {
+        grid-template-columns: 280px minmax(0, 1fr);
+      }
+      .admin-panel {
+        grid-column: 1 / -1;
+        grid-row: auto;
+        border-left: 0;
+        border-top: 1px solid var(--line);
+      }
+    }
+    @media (max-width: 760px) {
+      .app {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto minmax(0, 1fr) auto;
+      }
+      .topbar { flex-wrap: wrap; height: auto; padding: 12px; }
+      .sidebar { border-right: 0; border-bottom: 1px solid var(--line); }
+      .composer-inner { grid-template-columns: 1fr 40px; }
+      .composer .model-field { grid-column: 1 / -1; }
+      .chat-head { align-items: flex-start; flex-direction: column; }
+      .chat-actions { justify-content: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <div id="toast" class="toast"></div>
+
+  <script>
+    const now = new Date();
+    const models = ['gpt-4o-mini', 'gpt-4o', 'gpt-4.1-mini'];
+    const API_BASE = location.protocol === 'file:' ? 'http://localhost:8080' : '';
+    const SESSION_KEY = 'aichatbot.session';
+
+    const state = {
+      session: null,
+      view: 'chat',
+      authMode: 'login',
+      apiMode: 'connecting',
+      selectedThreadId: 3,
+      sort: 'desc',
+      feedbackFilter: 'all',
+      statusFilter: 'all',
+      users: [
+        { id: 1, email: 'alice@example.com', password: 'Pw123456!', name: 'Alice', role: 'MEMBER', createdAt: isoMinutesAgo(30) },
+        { id: 2, email: 'admin@example.com', password: 'Admin1234!', name: 'Admin', role: 'ADMIN', createdAt: isoMinutesAgo(60) }
+      ],
+      threads: [
+        { id: 3, userId: 1, title: 'VIP 고객 온보딩 정책', createdAt: isoMinutesAgo(29), updatedAt: isoMinutesAgo(20), deletedAt: null },
+        { id: 4, userId: 1, title: 'API 인증 방식 확인', createdAt: isoMinutesAgo(70), updatedAt: isoMinutesAgo(64), deletedAt: null }
+      ],
+      chats: [
+        {
+          id: 10,
+          threadId: 3,
+          userId: 1,
+          question: 'VIP 고객 온보딩은 며칠 안에 완료되나요?',
+          answer: '영업 담당자 승인 후 3영업일 이내 샌드박스 키가 발급됩니다. 이후 발급받은 계정으로 로그인하여 AI 챗봇 API를 호출할 수 있습니다.',
+          model: 'gpt-4o-mini',
+          createdAt: isoMinutesAgo(29),
+          deletedAt: null
+        },
+        {
+          id: 11,
+          threadId: 3,
+          userId: 1,
+          question: '그 다음 API 인증 방식도 알려주세요.',
+          answer: '회원가입과 로그인 후 받은 JWT를 Authorization: Bearer 형식으로 전달합니다. 가입과 로그인을 제외한 API는 모두 이 토큰을 확인합니다.',
+          model: 'gpt-4o-mini',
+          createdAt: isoMinutesAgo(20),
+          deletedAt: null
+        },
+        {
+          id: 12,
+          threadId: 4,
+          userId: 1,
+          question: '토큰이 없으면 어떻게 응답하나요?',
+          answer: '보호 API에 토큰 없이 요청하면 401 Unauthorized 응답이 반환됩니다. 토큰이 있지만 권한이 부족하면 403 Forbidden으로 구분됩니다.',
+          model: 'gpt-4o-mini',
+          createdAt: isoMinutesAgo(64),
+          deletedAt: null
+        }
+      ],
+      feedbacks: [
+        { id: 5, chatId: 10, userId: 1, isPositive: true, status: 'pending', createdAt: isoMinutesAgo(18), updatedAt: isoMinutesAgo(18), deletedAt: null }
+      ],
+      activityLogs: [
+        { id: 1, userId: 1, type: 'SIGNUP', createdAt: isoMinutesAgo(30) },
+        { id: 2, userId: 1, type: 'LOGIN', createdAt: isoMinutesAgo(29) },
+        { id: 3, userId: 1, type: 'CHAT_CREATED', createdAt: isoMinutesAgo(29) },
+        { id: 4, userId: 1, type: 'CHAT_CREATED', createdAt: isoMinutesAgo(20) },
+        { id: 5, userId: 2, type: 'LOGIN', createdAt: isoMinutesAgo(10) }
+      ]
+    };
+
+    const root = document.getElementById('root');
+    const toast = document.getElementById('toast');
+
+    restoreSession();
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    function formatTime(value) {
+      const date = new Date(value);
+      return date.toLocaleString('ko-KR', {
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+
+    function isoMinutesAgo(minutes) {
+      return new Date(now.getTime() - minutes * 60 * 1000).toISOString();
+    }
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.style.display = 'block';
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => {
+        toast.style.display = 'none';
+      }, 2200);
+    }
+
+    function saveSession() {
+      if (!state.session) {
+        localStorage.removeItem(SESSION_KEY);
+        return;
+      }
+      localStorage.setItem(SESSION_KEY, JSON.stringify(state.session));
+    }
+
+    function restoreSession() {
+      try {
+        const raw = localStorage.getItem(SESSION_KEY);
+        if (!raw) return;
+        const session = JSON.parse(raw);
+        if (session?.userId && session?.token && state.users.some(user => user.id === session.userId)) {
+          state.session = session;
+          state.selectedThreadId = visibleThreads()[0]?.id || state.selectedThreadId;
+        }
+      } catch {
+        localStorage.removeItem(SESSION_KEY);
+      }
+    }
+
+    class ApiRequestError extends Error {
+      constructor(status, message, payload) {
+        super(message);
+        this.status = status;
+        this.payload = payload;
+      }
+    }
+
+    async function apiRequest(path, options = {}) {
+      const headers = { ...(options.headers || {}) };
+      if (options.body !== undefined) headers['Content-Type'] = 'application/json';
+      if (state.session?.token) headers.Authorization = `Bearer ${state.session.token}`;
+
+      let response;
+      try {
+        response = await fetch(`${API_BASE}${path}`, {
+          ...options,
+          headers,
+          body: options.body === undefined ? undefined : JSON.stringify(options.body),
+        });
+      } catch (error) {
+        state.apiMode = 'fallback';
+        throw new ApiRequestError(0, 'API server is not reachable', null);
+      }
+
+      const contentType = response.headers.get('content-type') || '';
+      const isCsv = contentType.includes('text/csv');
+      const payload = response.status === 204
+        ? null
+        : isCsv
+          ? await response.text()
+          : contentType.includes('application/json')
+            ? await response.json()
+            : await response.text();
+
+      if (!response.ok) {
+        throw new ApiRequestError(response.status, payload?.message || response.statusText, payload);
+      }
+
+      state.apiMode = 'connected';
+      return payload;
+    }
+
+    function canFallback(error) {
+      return error instanceof ApiRequestError && (error.status === 0 || error.status === 404 || error.status === 405 || error.status === 501);
+    }
+
+    function currentUser() {
+      return state.session ? state.users.find(user => user.id === state.session.userId) : null;
+    }
+
+    function upsertUserFromApi(apiUser, password = '') {
+      const existing = state.users.find(user => user.id === apiUser.id || user.email === apiUser.email);
+      if (existing) {
+        existing.id = apiUser.id;
+        existing.email = apiUser.email;
+        existing.name = apiUser.name;
+        existing.role = apiUser.role;
+        if (password) existing.password = password;
+        if (apiUser.createdAt) existing.createdAt = apiUser.createdAt;
+        return existing;
+      }
+      const user = {
+        id: apiUser.id,
+        email: apiUser.email,
+        password,
+        name: apiUser.name,
+        role: apiUser.role,
+        createdAt: apiUser.createdAt || new Date().toISOString()
+      };
+      state.users.push(user);
+      return user;
+    }
+
+    async function trySyncChats() {
+      try {
+        const response = await apiRequest('/api/v1/chats?page=0&size=20&sort=createdAt,desc');
+        if (!response || !Array.isArray(response.content)) return;
+        response.content.forEach(thread => {
+          upsertThreadFromApi(thread);
+          (thread.chats || []).forEach(chat => upsertChatFromApi(chat, thread.threadId, thread.userId));
+        });
+        state.selectedThreadId = visibleThreads()[0]?.id || state.selectedThreadId;
+      } catch (error) {
+        if (!canFallback(error)) showToast(error.message || '대화 목록을 불러오지 못했습니다.');
+      }
+    }
+
+    async function trySyncAdminData() {
+      const user = currentUser();
+      if (!user) return;
+      await trySyncChats();
+      try {
+        const query = new URLSearchParams();
+        if (state.feedbackFilter !== 'all') query.set('isPositive', state.feedbackFilter === 'positive' ? 'true' : 'false');
+        if (state.statusFilter !== 'all') query.set('status', state.statusFilter);
+        query.set('page', '0');
+        query.set('size', '20');
+        query.set('sort', 'createdAt,desc');
+        const response = await apiRequest(`/api/v1/feedbacks?${query.toString()}`);
+        if (response?.content) response.content.forEach(upsertFeedbackFromApi);
+      } catch (error) {
+        if (!canFallback(error)) showToast(error.message || '피드백 목록을 불러오지 못했습니다.');
+      }
+      if (user.role === 'ADMIN') {
+        try {
+          const activity = await apiRequest('/api/v1/admin/activity');
+          state.remoteActivity = activity;
+        } catch (error) {
+          if (!canFallback(error)) showToast(error.message || '활동 집계를 불러오지 못했습니다.');
+        }
+      }
+    }
+
+    function upsertThreadFromApi(apiThread) {
+      const existing = state.threads.find(thread => thread.id === apiThread.threadId);
+      if (existing) {
+        existing.userId = apiThread.userId;
+        existing.title = existing.title || firstChatTitle(apiThread);
+        existing.createdAt = apiThread.createdAt;
+        existing.updatedAt = apiThread.updatedAt || apiThread.createdAt;
+        existing.deletedAt = null;
+        return existing;
+      }
+      const thread = {
+        id: apiThread.threadId,
+        userId: apiThread.userId,
+        title: firstChatTitle(apiThread),
+        createdAt: apiThread.createdAt,
+        updatedAt: apiThread.updatedAt || apiThread.createdAt,
+        deletedAt: null
+      };
+      state.threads.push(thread);
+      return thread;
+    }
+
+    function firstChatTitle(apiThread) {
+      const first = (apiThread.chats || [])[0];
+      return first ? first.question.slice(0, 36) : `대화 ${apiThread.threadId}`;
+    }
+
+    function upsertChatFromApi(apiChat, threadId, userId) {
+      const chatId = apiChat.chatId;
+      const existing = state.chats.find(chat => chat.id === chatId);
+      const next = {
+        id: chatId,
+        threadId,
+        userId,
+        question: apiChat.question,
+        answer: apiChat.answer,
+        model: apiChat.model,
+        createdAt: apiChat.createdAt,
+        deletedAt: null
+      };
+      if (existing) {
+        Object.assign(existing, next);
+        return existing;
+      }
+      state.chats.push(next);
+      return next;
+    }
+
+    function upsertThreadFromChatResponse(response, userId) {
+      const existing = state.threads.find(thread => thread.id === response.threadId);
+      if (existing) {
+        existing.userId = userId;
+        existing.updatedAt = response.createdAt;
+        existing.deletedAt = null;
+        if (!existing.title || existing.title === '새 대화') existing.title = response.question.slice(0, 36);
+        return existing;
+      }
+      const thread = {
+        id: response.threadId,
+        userId,
+        title: response.question.slice(0, 36),
+        createdAt: response.createdAt,
+        updatedAt: response.createdAt,
+        deletedAt: null
+      };
+      state.threads.push(thread);
+      return thread;
+    }
+
+    function upsertChatFromResponse(response, userId) {
+      const existing = state.chats.find(chat => chat.id === response.chatId);
+      const next = {
+        id: response.chatId,
+        threadId: response.threadId,
+        userId,
+        question: response.question,
+        answer: response.answer,
+        model: response.model,
+        createdAt: response.createdAt,
+        deletedAt: null,
+        streaming: false
+      };
+      if (existing) {
+        Object.assign(existing, next);
+        return existing;
+      }
+      state.chats.push(next);
+      return next;
+    }
+
+    function scrollMessagesToBottom() {
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+      });
+    }
+
+    async function animateAnswer(chatId, fullAnswer) {
+      const chat = state.chats.find(item => item.id === chatId);
+      if (!chat) return;
+      chat.answer = '';
+      chat.streaming = true;
+      const chunks = fullAnswer.match(/.{1,8}/gs) || [fullAnswer];
+      for (const chunk of chunks) {
+        await new Promise(resolve => setTimeout(resolve, 38));
+        chat.answer += chunk;
+        render();
+        scrollMessagesToBottom();
+      }
+      chat.streaming = false;
+      render();
+      scrollMessagesToBottom();
+    }
+
+    function visibleThreads() {
+      const user = currentUser();
+      if (!user) return [];
+      return state.threads
+        .filter(thread => !thread.deletedAt)
+        .filter(thread => user.role === 'ADMIN' || thread.userId === user.id)
+        .sort((a, b) => state.sort === 'desc'
+          ? new Date(b.updatedAt) - new Date(a.updatedAt)
+          : new Date(a.updatedAt) - new Date(b.updatedAt));
+    }
+
+    function threadChats(threadId) {
+      return state.chats
+        .filter(chat => chat.threadId === threadId && !chat.deletedAt)
+        .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    }
+
+    function selectedThread() {
+      return visibleThreads().find(thread => thread.id === state.selectedThreadId) || visibleThreads()[0] || null;
+    }
+
+    function latestUserChat(userId) {
+      return state.chats
+        .filter(chat => chat.userId === userId && !chat.deletedAt)
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0] || null;
+    }
+
+    function createAnswer(question) {
+      const lower = question.toLowerCase();
+      if (question.includes('인증') || lower.includes('jwt') || question.includes('토큰')) {
+        return '회원가입과 로그인 후 발급된 JWT를 Authorization: Bearer 형식으로 전달합니다. 가입과 로그인 외의 요청은 이 토큰으로 인증됩니다.';
+      }
+      if (question.includes('피드백')) {
+        return '피드백은 대화 ID와 사용자 ID 기준으로 저장됩니다. 한 사용자는 하나의 대화에 한 번만 피드백을 생성할 수 있고, 상태는 관리자가 pending 또는 resolved로 관리합니다.';
+      }
+      if (question.includes('보고') || question.includes('csv') || question.includes('CSV')) {
+        return '관리자는 최근 24시간의 가입 수, 로그인 수, 대화 생성 수를 확인할 수 있고, 대화 목록은 사용자 정보와 함께 CSV 파일로 받을 수 있습니다.';
+      }
+      if (question.includes('스레드') || question.includes('30분')) {
+        return '마지막 질문 후 30분 이내에 이어진 질문은 같은 스레드에 저장됩니다. 30분이 지나면 새 스레드가 생성되어 대화 이력이 분리됩니다.';
+      }
+      return '질문을 접수했습니다. 현재 대화의 이전 질문과 답변을 함께 참고하여 답변을 생성하고, 결과는 대화 이력에 저장됩니다.';
+    }
+
+    function render() {
+      if (!state.session) {
+        renderLogin();
+        return;
+      }
+      renderApp();
+    }
+
+    function renderLogin() {
+      const isSignup = state.authMode === 'signup';
+      root.innerHTML = `
+        <main class="login-shell">
+          <section class="login-panel">
+            <h1>AI Chat Console</h1>
+            <p>${isSignup ? '계정을 생성한 뒤 대화를 시작합니다.' : '계정으로 로그인해 대화를 시작합니다.'}</p>
+            <form id="loginForm">
+              <div class="field">
+                <label for="email">이메일</label>
+                <input id="email" name="email" type="email" autocomplete="username" />
+              </div>
+              <div class="field">
+                <label for="password">패스워드</label>
+                <input id="password" name="password" type="password" autocomplete="current-password" />
+              </div>
+              ${isSignup ? `
+                <div class="field">
+                  <label for="name">이름</label>
+                  <input id="name" name="name" type="text" autocomplete="name" />
+                </div>
+              ` : ''}
+              <div class="auth-actions">
+                <button class="primary" type="submit">${isSignup ? '가입 완료' : '로그인'}</button>
+                <button type="button" id="authModeButton">${isSignup ? '로그인으로 돌아가기' : '회원 가입'}</button>
+              </div>
+            </form>
+          </section>
+        </main>
+      `;
+
+      document.getElementById('loginForm').addEventListener('submit', async event => {
+        event.preventDefault();
+        const form = new FormData(event.currentTarget);
+        const email = String(form.get('email')).trim().toLowerCase();
+        const password = String(form.get('password'));
+        if (state.authMode === 'signup') {
+          await submitSignup(email, password, String(form.get('name') || '').trim());
+          return;
+        }
+        try {
+          const response = await apiRequest('/api/v1/auth/login', {
+            method: 'POST',
+            body: { email, password },
+          });
+          const user = upsertUserFromApi(response.user, password);
+          state.session = { userId: user.id, token: response.accessToken };
+          saveSession();
+          state.activityLogs.push({ id: nextId(state.activityLogs), userId: user.id, type: 'LOGIN', createdAt: new Date().toISOString() });
+          state.selectedThreadId = visibleThreads()[0]?.id || null;
+          await trySyncAdminData();
+          render();
+        } catch (error) {
+          if (!canFallback(error)) {
+            showToast(error.message || '로그인에 실패했습니다.');
+            return;
+          }
+          const user = state.users.find(item => item.email === email && item.password === password);
+          if (!user) {
+            showToast('이메일 또는 패스워드를 확인하세요.');
+            return;
+          }
+          state.session = { userId: user.id, token: 'eyJhbGciOiJIUzI1NiI...' };
+          saveSession();
+          state.activityLogs.push({ id: nextId(state.activityLogs), userId: user.id, type: 'LOGIN', createdAt: new Date().toISOString() });
+          state.selectedThreadId = visibleThreads()[0]?.id || null;
+          render();
+        }
+      });
+
+      document.getElementById('authModeButton').addEventListener('click', () => {
+        state.authMode = state.authMode === 'signup' ? 'login' : 'signup';
+        renderLogin();
+      });
+
+    }
+
+    async function submitSignup(email, password, name) {
+      if (!email || !password || !name) {
+        showToast('이메일, 패스워드, 이름을 입력하세요.');
+        return;
+      }
+      try {
+        const response = await apiRequest('/api/v1/auth/signup', {
+          method: 'POST',
+          body: { email, password, name },
+        });
+        const user = upsertUserFromApi(response, password);
+        state.activityLogs.push({ id: nextId(state.activityLogs), userId: user.id, type: 'SIGNUP', createdAt: user.createdAt });
+        const loginResponse = await apiRequest('/api/v1/auth/login', {
+          method: 'POST',
+          body: { email, password },
+        });
+        upsertUserFromApi(loginResponse.user, password);
+        state.session = { userId: user.id, token: loginResponse.accessToken };
+        saveSession();
+        state.authMode = 'login';
+        state.selectedThreadId = visibleThreads()[0]?.id || null;
+        render();
+      } catch (error) {
+        if (!canFallback(error)) {
+          showToast(error.message || '회원 가입에 실패했습니다.');
+          return;
+        }
+        if (state.users.some(user => user.email === email)) {
+          showToast('이미 등록된 이메일입니다.');
+          return;
+        }
+        const user = {
+          id: nextId(state.users),
+          email,
+          password,
+          name,
+          role: 'MEMBER',
+          createdAt: new Date().toISOString()
+        };
+        state.users.push(user);
+        state.activityLogs.push({ id: nextId(state.activityLogs), userId: user.id, type: 'SIGNUP', createdAt: user.createdAt });
+        state.session = { userId: user.id, token: 'eyJhbGciOiJIUzI1NiI...' };
+        saveSession();
+        state.authMode = 'login';
+        render();
+      }
+    }
+
+    function renderApp() {
+      const user = currentUser();
+      const thread = selectedThread();
+      if (thread && state.selectedThreadId !== thread.id) state.selectedThreadId = thread.id;
+      root.innerHTML = `
+        <div class="app">
+          <header class="topbar">
+            <div class="brand">
+              <div class="mark">AI</div>
+              <h1>AI Chat Console</h1>
+            </div>
+            <div class="account">
+              <span><strong>${escapeHtml(user.name)}</strong></span>
+              <button type="button" id="logout">로그아웃</button>
+            </div>
+          </header>
+          ${renderSidebar(thread)}
+          ${renderChat(thread)}
+          ${renderAdminPanel(user)}
+        </div>
+      `;
+      bindAppEvents();
+    }
+
+    function renderSidebar(activeThread) {
+      const threads = visibleThreads();
+      return `
+        <aside class="sidebar">
+          <div class="side-head">
+            대화 이력
+          </div>
+          <div class="thread-tools">
+            <select id="sortOrder" aria-label="정렬">
+              <option value="desc" ${state.sort === 'desc' ? 'selected' : ''}>최신순</option>
+              <option value="asc" ${state.sort === 'asc' ? 'selected' : ''}>오래된순</option>
+            </select>
+          </div>
+          <div class="thread-list" id="threadList">
+            ${threads.length ? threads.map(thread => renderThreadButton(thread, activeThread)).join('') : '<div class="empty">대화 이력이 없습니다.</div>'}
+          </div>
+        </aside>
+      `;
+    }
+
+    function renderThreadButton(thread, activeThread) {
+      const chats = threadChats(thread.id);
+      const lastChat = chats[chats.length - 1];
+      const owner = state.users.find(user => user.id === thread.userId);
+      return `
+        <button type="button" class="thread-item ${activeThread && activeThread.id === thread.id ? 'active' : ''}" data-thread-id="${thread.id}">
+          <span class="thread-title">${escapeHtml(thread.title || '새 대화')}</span>
+          <span class="thread-preview">${escapeHtml(lastChat ? lastChat.question : '질문을 입력하세요.')}</span>
+          <span class="thread-meta">
+            <span>${escapeHtml(owner ? owner.name : 'Unknown')}</span>
+            <span>${formatTime(thread.updatedAt)}</span>
+          </span>
+        </button>
+      `;
+    }
+
+    function renderChat(thread) {
+      const chats = thread ? threadChats(thread.id) : [];
+      return `
+        <main class="main">
+          <div class="chat-head">
+            <div>
+              <h2>${escapeHtml(thread ? thread.title : '새 대화')}</h2>
+              <p>${thread ? `${chats.length}개 대화` : '질문을 입력하면 대화가 생성됩니다.'}</p>
+            </div>
+            <div class="chat-actions">
+              <button type="button" class="icon" id="refreshList" title="목록 새로고침" aria-label="목록 새로고침">↻</button>
+              <button type="button" class="icon danger" id="deleteThread" title="스레드 삭제" aria-label="스레드 삭제" ${thread ? '' : 'disabled'}>⌫</button>
+            </div>
+          </div>
+          <div class="messages" id="messages">
+            ${chats.length ? chats.map(chat => renderChatPair(chat)).join('') : '<div class="empty">질문을 입력하면 AI 답변이 표시됩니다.</div>'}
+          </div>
+          <form class="composer" id="composer">
+            <div class="composer-inner">
+              <div>
+                <textarea id="question" name="question" placeholder="질문을 입력하세요." required></textarea>
+                <div class="switch-line">
+                  <input id="isStreaming" name="isStreaming" type="checkbox" />
+                  <span>바로 응답(스트리밍)</span>
+                </div>
+              </div>
+              <div class="model-field">
+                <select id="model" name="model">
+                  ${models.map(model => `<option value="${model}">${model}</option>`).join('')}
+                </select>
+              </div>
+              <button class="primary send-button" type="submit" title="전송" aria-label="전송">↑</button>
+            </div>
+          </form>
+        </main>
+      `;
+    }
+
+    function renderChatPair(chat) {
+      const feedback = state.feedbacks.find(item => item.chatId === chat.id && item.userId === currentUser().id && !item.deletedAt);
+      return `
+        <article>
+          <div class="message user">
+            <div class="message-meta"><span>${formatTime(chat.createdAt)}</span></div>
+            <div class="bubble">${escapeHtml(chat.question)}</div>
+          </div>
+          <div class="message ai">
+            <div class="message-meta"><span>${escapeHtml(chat.model || 'default')}</span></div>
+            <div class="bubble">${escapeHtml(chat.answer)}</div>
+            ${chat.streaming ? '<div class="streaming-indicator" aria-label="응답 생성 중"><span></span><span></span><span></span></div>' : ''}
+            <div class="feedback-actions" data-chat-id="${chat.id}">
+              <button type="button" data-feedback="true" class="${feedback?.isPositive === true ? 'selected' : ''}" title="긍정 피드백" aria-label="긍정 피드백">👍</button>
+              <button type="button" data-feedback="false" class="${feedback?.isPositive === false ? 'selected' : ''}" title="부정 피드백" aria-label="부정 피드백">👎</button>
+            </div>
+          </div>
+        </article>
+      `;
+    }
+
+    function renderAdminPanel(user) {
+      const stats = activityStats();
+      const rows = filteredFeedbacks();
+      const isAdmin = user.role === 'ADMIN';
+      return `
+        <aside class="admin-panel">
+          ${isAdmin ? `
+            <section class="panel-section">
+              <h2>최근 24시간 활동</h2>
+              <div class="stats">
+                <div class="stat"><span>가입</span><strong>${stats.signups}</strong></div>
+                <div class="stat"><span>로그인</span><strong>${stats.logins}</strong></div>
+                <div class="stat"><span>대화</span><strong>${stats.chatsCreated}</strong></div>
+              </div>
+            </section>
+          ` : ''}
+          <section class="panel-section">
+            <h2>${isAdmin ? '피드백 관리' : '내 피드백'}</h2>
+            <div class="filters">
+              <select id="feedbackFilter">
+                <option value="all" ${state.feedbackFilter === 'all' ? 'selected' : ''}>전체</option>
+                <option value="positive" ${state.feedbackFilter === 'positive' ? 'selected' : ''}>긍정</option>
+                <option value="negative" ${state.feedbackFilter === 'negative' ? 'selected' : ''}>부정</option>
+              </select>
+              <select id="statusFilter">
+                <option value="all" ${state.statusFilter === 'all' ? 'selected' : ''}>전체 상태</option>
+                <option value="pending" ${state.statusFilter === 'pending' ? 'selected' : ''}>pending</option>
+                <option value="resolved" ${state.statusFilter === 'resolved' ? 'selected' : ''}>resolved</option>
+              </select>
+            </div>
+            <div class="feedback-list">
+              ${rows.length ? rows.map(item => renderFeedbackRow(item, isAdmin)).join('') : '<div class="empty">피드백이 없습니다.</div>'}
+            </div>
+          </section>
+          ${isAdmin ? `
+            <section class="panel-section">
+              <h2>보고서</h2>
+              <button type="button" id="downloadCsv">CSV 다운로드</button>
+            </section>
+          ` : ''}
+        </aside>
+      `;
+    }
+
+    function renderFeedbackRow(feedback, isAdmin) {
+      const chat = state.chats.find(item => item.id === feedback.chatId);
+      const user = state.users.find(item => item.id === feedback.userId);
+      return `
+        <div class="feedback-row">
+          <div class="row-top">
+            <span>${feedback.isPositive ? '긍정' : '부정'} · ${escapeHtml(user?.name || 'Unknown')}</span>
+            ${isAdmin ? `<span class="status ${feedback.status === 'resolved' ? 'resolved' : ''}">${feedback.status}</span>` : ''}
+          </div>
+          <p>${escapeHtml(chat ? chat.question : '삭제된 대화')}</p>
+          ${isAdmin && feedback.status === 'pending'
+            ? `<button type="button" data-resolve="${feedback.id}">처리 완료</button>`
+            : ''}
+        </div>
+      `;
+    }
+
+    function bindAppEvents() {
+      document.getElementById('logout').addEventListener('click', () => {
+        state.session = null;
+        saveSession();
+        render();
+      });
+
+      document.querySelectorAll('[data-thread-id]').forEach(button => {
+        button.addEventListener('click', () => {
+          state.selectedThreadId = Number(button.dataset.threadId);
+          render();
+        });
+      });
+
+      document.getElementById('sortOrder').addEventListener('change', event => {
+        state.sort = event.target.value;
+        render();
+      });
+
+      document.getElementById('refreshList').addEventListener('click', async () => {
+        await trySyncChats();
+        showToast('대화 목록을 갱신했습니다.');
+        render();
+      });
+
+      document.getElementById('deleteThread').addEventListener('click', async () => {
+        const thread = selectedThread();
+        if (!thread) return;
+        const user = currentUser();
+        if (user.role !== 'ADMIN' && thread.userId !== user.id) {
+          showToast('스레드 삭제 권한이 없습니다.');
+          return;
+        }
+        try {
+          await apiRequest(`/api/v1/threads/${thread.id}`, { method: 'DELETE' });
+        } catch (error) {
+          if (!canFallback(error)) {
+            showToast(error.message || '스레드 삭제에 실패했습니다.');
+            return;
+          }
+        }
+        const deletedAt = new Date().toISOString();
+        thread.deletedAt = deletedAt;
+        state.chats.filter(chat => chat.threadId === thread.id).forEach(chat => chat.deletedAt = deletedAt);
+        state.feedbacks.filter(feedback => state.chats.some(chat => chat.id === feedback.chatId && chat.threadId === thread.id)).forEach(feedback => feedback.deletedAt = deletedAt);
+        state.selectedThreadId = visibleThreads()[0]?.id || null;
+        showToast('스레드를 삭제했습니다.');
+        render();
+      });
+
+      document.getElementById('composer').addEventListener('submit', async event => {
+        event.preventDefault();
+        const user = currentUser();
+        const form = new FormData(event.currentTarget);
+        const question = String(form.get('question')).trim();
+        const model = String(form.get('model'));
+        const isStreaming = form.get('isStreaming') === 'on';
+        if (!question) return;
+
+        try {
+          const response = await apiRequest('/api/v1/chats', {
+            method: 'POST',
+            body: { question, model, isStreaming },
+          });
+          const thread = upsertThreadFromChatResponse(response, user.id);
+          const chat = upsertChatFromResponse(response, thread.userId);
+          state.selectedThreadId = thread.id;
+          state.activityLogs.push({ id: nextId(state.activityLogs), userId: user.id, type: 'CHAT_CREATED', createdAt: response.createdAt });
+          if (isStreaming) {
+            chat.answer = '';
+            chat.streaming = true;
+            render();
+            scrollMessagesToBottom();
+            await animateAnswer(chat.id, response.answer);
+            return;
+          }
+          render();
+          scrollMessagesToBottom();
+          return;
+        } catch (error) {
+          if (!canFallback(error)) {
+            showToast(error.message || '질문 전송에 실패했습니다.');
+            return;
+          }
+        }
+
+        const latest = latestUserChat(user.id);
+        const shouldReuse = latest && (Date.now() - new Date(latest.createdAt).getTime()) <= 30 * 60 * 1000;
+        let thread = shouldReuse
+          ? state.threads.find(item => item.id === latest.threadId && !item.deletedAt)
+          : null;
+        if (!thread) {
+          thread = {
+            id: nextId(state.threads),
+            userId: user.id,
+            title: question.slice(0, 36),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            deletedAt: null
+          };
+          state.threads.push(thread);
+        }
+        state.selectedThreadId = thread.id;
+        const createdAt = new Date().toISOString();
+        const answer = createAnswer(question);
+        const chat = {
+          id: nextId(state.chats),
+          threadId: thread.id,
+          userId: user.id,
+          question,
+          answer: isStreaming ? '' : answer,
+          model,
+          createdAt,
+          deletedAt: null,
+          streaming: isStreaming
+        };
+        if (thread.title === '새 대화') thread.title = question.slice(0, 36);
+        thread.updatedAt = createdAt;
+        state.chats.push(chat);
+        state.activityLogs.push({ id: nextId(state.activityLogs), userId: user.id, type: 'CHAT_CREATED', createdAt });
+        render();
+        scrollMessagesToBottom();
+        if (isStreaming) await animateAnswer(chat.id, answer);
+      });
+
+      document.querySelectorAll('[data-feedback]').forEach(button => {
+        button.addEventListener('click', async () => {
+          const chatId = Number(button.closest('.feedback-actions').dataset.chatId);
+          const isPositive = button.dataset.feedback === 'true';
+          await createFeedback(chatId, isPositive);
+        });
+      });
+
+      document.getElementById('feedbackFilter').addEventListener('change', event => {
+        state.feedbackFilter = event.target.value;
+        trySyncAdminData().finally(render);
+      });
+
+      document.getElementById('statusFilter').addEventListener('change', event => {
+        state.statusFilter = event.target.value;
+        trySyncAdminData().finally(render);
+      });
+
+      document.querySelectorAll('[data-resolve]').forEach(button => {
+        button.addEventListener('click', async () => {
+          const feedback = state.feedbacks.find(item => item.id === Number(button.dataset.resolve));
+          if (feedback) {
+            try {
+              const response = await apiRequest(`/api/v1/feedbacks/${feedback.id}/status`, {
+                method: 'PATCH',
+                body: { status: 'resolved' },
+              });
+              feedback.status = response?.status || 'resolved';
+              feedback.updatedAt = response?.updatedAt || new Date().toISOString();
+              showToast('피드백 상태를 변경했습니다.');
+              render();
+              return;
+            } catch (error) {
+              if (!canFallback(error)) {
+                showToast(error.message || '피드백 상태 변경에 실패했습니다.');
+                return;
+              }
+            }
+            feedback.status = 'resolved';
+            feedback.updatedAt = new Date().toISOString();
+            showToast('피드백 상태를 변경했습니다.');
+            render();
+          }
+        });
+      });
+
+      document.getElementById('downloadCsv')?.addEventListener('click', downloadCsv);
+    }
+
+    async function createFeedback(chatId, isPositive) {
+      const user = currentUser();
+      const chat = state.chats.find(item => item.id === chatId && !item.deletedAt);
+      if (!chat) return;
+      if (user.role !== 'ADMIN' && chat.userId !== user.id) {
+        showToast('피드백 생성 권한이 없습니다.');
+        return;
+      }
+      try {
+        const response = await apiRequest(`/api/v1/chats/${chatId}/feedbacks`, {
+          method: 'POST',
+          body: { isPositive },
+        });
+        upsertFeedbackFromApi(response);
+        showToast('피드백을 저장했습니다.');
+        render();
+        return;
+      } catch (error) {
+        if (!canFallback(error) && error.status !== 409) {
+          showToast(error.message || '피드백 저장에 실패했습니다.');
+          return;
+        }
+      }
+      const existing = state.feedbacks.find(item => item.chatId === chatId && item.userId === user.id && !item.deletedAt);
+      if (existing) {
+        existing.isPositive = isPositive;
+        existing.updatedAt = new Date().toISOString();
+        showToast('피드백을 변경했습니다.');
+      } else {
+        state.feedbacks.push({
+          id: nextId(state.feedbacks),
+          chatId,
+          userId: user.id,
+          isPositive,
+          status: 'pending',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          deletedAt: null
+        });
+        showToast('피드백을 저장했습니다.');
+      }
+      render();
+    }
+
+    function upsertFeedbackFromApi(response) {
+      const existing = state.feedbacks.find(item => item.id === response.id || (item.chatId === response.chatId && item.userId === response.userId));
+      const next = {
+        id: response.id,
+        chatId: response.chatId,
+        userId: response.userId,
+        isPositive: response.isPositive,
+        status: response.status,
+        createdAt: response.createdAt,
+        updatedAt: response.updatedAt || response.createdAt,
+        deletedAt: null
+      };
+      if (existing) {
+        Object.assign(existing, next);
+        return existing;
+      }
+      state.feedbacks.push(next);
+      return next;
+    }
+
+    function filteredFeedbacks() {
+      const user = currentUser();
+      return state.feedbacks
+        .filter(item => !item.deletedAt)
+        .filter(item => user.role === 'ADMIN' || item.userId === user.id)
+        .filter(item => state.feedbackFilter === 'all'
+          || (state.feedbackFilter === 'positive' ? item.isPositive : !item.isPositive))
+        .filter(item => state.statusFilter === 'all' || item.status === state.statusFilter)
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    }
+
+    function activityStats() {
+      if (state.remoteActivity) {
+        return {
+          signups: state.remoteActivity.signups,
+          logins: state.remoteActivity.logins,
+          chatsCreated: state.remoteActivity.chatsCreated
+        };
+      }
+      const windowStart = now.getTime() - 24 * 60 * 60 * 1000;
+      const logs = state.activityLogs.filter(log => new Date(log.createdAt).getTime() >= windowStart);
+      return {
+        signups: logs.filter(log => log.type === 'SIGNUP').length,
+        logins: logs.filter(log => log.type === 'LOGIN').length,
+        chatsCreated: logs.filter(log => log.type === 'CHAT_CREATED').length
+      };
+    }
+
+    async function downloadCsv() {
+      const user = currentUser();
+      if (user.role !== 'ADMIN') {
+        showToast('CSV 보고서는 관리자만 받을 수 있습니다.');
+        return;
+      }
+      try {
+        const csv = await apiRequest('/api/v1/admin/reports/chats.csv');
+        downloadText(csv, 'chats_last_24h.csv', 'text/csv;charset=utf-8');
+        showToast('CSV 파일을 생성했습니다.');
+        return;
+      } catch (error) {
+        if (!canFallback(error)) {
+          showToast(error.message || 'CSV 보고서 생성에 실패했습니다.');
+          return;
+        }
+      }
+      const rows = [
+        ['chat_id', 'thread_id', 'user_id', 'user_email', 'user_name', 'model', 'question', 'answer', 'chat_created_at']
+      ];
+      state.chats
+        .filter(chat => !chat.deletedAt)
+        .forEach(chat => {
+          const owner = state.users.find(item => item.id === chat.userId);
+          rows.push([
+            chat.id,
+            chat.threadId,
+            chat.userId,
+            owner?.email || '',
+            owner?.name || '',
+            chat.model || '',
+            chat.question,
+            chat.answer,
+            chat.createdAt
+          ]);
+        });
+      downloadText(rows.map(row => row.map(csvCell).join(',')).join('\n'), 'chats_last_24h.csv', 'text/csv;charset=utf-8');
+      showToast('CSV 파일을 생성했습니다.');
+    }
+
+    function downloadText(text, filename, type) {
+      const blob = new Blob([text], { type });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function csvCell(value) {
+      const text = String(value ?? '');
+      return /[",\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+    }
+
+    function nextId(items) {
+      return items.reduce((max, item) => Math.max(max, item.id), 0) + 1;
+    }
+
+    render();
+  </script>
+</body>
+</html>

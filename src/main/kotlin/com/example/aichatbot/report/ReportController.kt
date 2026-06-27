@@ -23,6 +23,6 @@ class ReportController(
     fun getChatsCsv(@AuthenticationPrincipal currentUser: CurrentUser): ResponseEntity<String> =
         ResponseEntity.ok()
             .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"chats_last_24h.csv\"")
-            .contentType(MediaType.parseMediaType("text/csv"))
+            .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
             .body(reportService.getChatsCsv(currentUser.role))
 }

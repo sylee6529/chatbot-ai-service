@@ -40,10 +40,26 @@ class ReportIntegrationTest(
 
         val csv = reportService.getChatsCsv(Role.ADMIN)
 
-        assertTrue(csv.startsWith("chat_id,thread_id,user_id,user_email,user_name,model,question,answer,chat_created_at"))
+        assertTrue(csv.startsWith("\uFEFFchat_id,thread_id,user_id,user_email,user_name,model,question,answer,chat_created_at"))
         assertTrue(csv.contains("\"Included\""))
         assertFalse(csv.contains("\"Deleted chat\""))
         assertFalse(csv.contains("\"Old chat\""))
+    }
+
+    @Test
+    fun `csv report escapes formula injection values`() {
+        val user = createUser("report-formula", Role.MEMBER)
+        createChat(user, "=HYPERLINK(\"https://example.com\")", null, null)
+        createChat(user, "+cmd", null, null)
+        createChat(user, "-2+3", null, null)
+        createChat(user, "@SUM(1,2)", null, null)
+
+        val csv = reportService.getChatsCsv(Role.ADMIN)
+
+        assertTrue(csv.contains("\"'=HYPERLINK(\"\"https://example.com\"\")\""))
+        assertTrue(csv.contains("\"'+cmd\""))
+        assertTrue(csv.contains("\"'-2+3\""))
+        assertTrue(csv.contains("\"'@SUM(1,2)\""))
     }
 
     @Test

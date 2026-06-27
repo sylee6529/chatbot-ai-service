@@ -40,7 +40,12 @@ class SecurityConfig(
             .authorizeHttpRequests {
                 it
                     .dispatcherTypeMatchers(DispatcherType.ERROR, DispatcherType.ASYNC).permitAll()
-                    .requestMatchers("/api/v1/health", "/api/v1/auth/signup", "/api/v1/auth/login").permitAll()
+                    .requestMatchers(
+                        "/chatbot-ui.html",
+                        "/api/v1/health",
+                        "/api/v1/auth/signup",
+                        "/api/v1/auth/login",
+                    ).permitAll()
                     .anyRequest().authenticated()
             }
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter::class.java)
