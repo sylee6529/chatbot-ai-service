@@ -198,6 +198,7 @@ chat_id,thread_id,user_id,user_email,user_name,model,question,answer,chat_create
 
 ```bash
 curl -N -XPOST localhost:8080/api/v1/chats -H "Authorization: Bearer $TOKEN" \
+  -H 'Accept: text/event-stream' \
   -H 'Content-Type: application/json' \
   -d '{"question":"짧은 시 한 편 스트리밍해줘","isStreaming":true}'
 ```

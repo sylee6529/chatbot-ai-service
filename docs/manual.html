@@ -514,9 +514,10 @@
 }</code></pre>
 
       <h3>스트리밍 응답</h3>
-      <p><code>isStreaming</code>을 <code>true</code>로 보내면 답변을 한 번에 기다리지 않고 조각 단위로 받을 수 있습니다.</p>
+      <p><code>isStreaming</code>과 <code>Accept: text/event-stream</code>을 함께 보내면 답변을 한 번에 기다리지 않고 조각 단위로 받을 수 있습니다.</p>
       <pre><code>curl -N -X POST http://localhost:8080/api/v1/chats \
   -H "Authorization: Bearer $TOKEN" \
+  -H 'Accept: text/event-stream' \
   -H 'Content-Type: application/json' \
   -d '{"question":"인증 방식을 짧게 설명해줘","isStreaming":true}'</code></pre>
       <pre><code>event: chunk

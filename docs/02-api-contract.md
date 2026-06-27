@@ -419,7 +419,8 @@ curl -s localhost:8080/api/v1/admin/reports/chats.csv \
 ## 6. 스트리밍
 
 ### 6.1 스트리밍 채팅 — `isStreaming=true`인 `POST /api/v1/chats`  · 인증 필요
-§2.1과 동일 엔드포인트. `isStreaming=true`일 때 서버는 `SseEmitter`를 통해
+§2.1과 동일 엔드포인트. `isStreaming=true`와 `Accept: text/event-stream`을
+함께 보낼 때 서버는 `SseEmitter`를 통해
 **Server-Sent Events**(`Content-Type: text/event-stream`)로 응답합니다.
 토큰/청크가 도착하는 대로 스트리밍되고, 마지막 이벤트가 영속화된 채팅 id를
 담습니다. 전체 답변은 정상 채팅 행으로 저장됩니다.
@@ -452,6 +453,7 @@ data: {"message":"AI provider request failed"}
 
 ```bash
 curl -N -XPOST localhost:8080/api/v1/chats -H "Authorization: Bearer $TOKEN" \
+  -H 'Accept: text/event-stream' \
   -H 'Content-Type: application/json' \
   -d '{"question":"짧은 시 한 편 스트리밍해줘","isStreaming":true}'
 ```

@@ -34,14 +34,14 @@
 
 | ID | 요구사항 | 단계 | 명세 참조 | 검증 | 상태 |
 |----|----------|------|-----------|------|------|
-| P1-1 | 인가 있는 스레드 삭제 | 5 | 02-api-contract §Thread | 소유자 삭제; 타인 → 403; `*ThreadDeletion*` | 계획됨 |
-| P1-2 | 피드백 생성 | 5 | 02-api-contract §Feedback | `POST /chats/{id}/feedbacks` | 계획됨 |
-| P1-3 | 사용자-채팅당 1피드백 | 5 | 00-assumptions E4, H5 | 중복 → 409; soft-deleted row 포함 유니크 제약 | 계획됨 |
-| P1-4 | 인가/필터/정렬/페이징 피드백 목록 | 5 | 02-api-contract §Feedback list | `*Feedback*` 테스트 | 계획됨 |
-| P1-5 | 관리자 피드백 상태 변경 | 5 | 00-assumptions E2 | `PATCH .../status`; 멤버 → 403 | 계획됨 |
-| P1-6 | 최근 24시간 활동 집계 | 6 | 00-assumptions F1–F3 | `GET /admin/activity` 집계; 성공 로그인만 집계 | 계획됨 |
-| P1-7 | 관리자 전용 CSV 리포트(최근 24시간) | 6 | 00-assumptions F4 | `text/csv`; 멤버 → 403 | 계획됨 |
-| P1-8 | isStreaming=true 시 스트리밍 | 7 | 00-assumptions G1–G2 | SSE 응답; 비스트리밍 불변 | 계획됨 |
+| P1-1 | 인가 있는 스레드 삭제 | 5 | 02-api-contract §Thread | 소유자 삭제; 타인 → 403; `*ThreadDeletion*` | 구현됨 |
+| P1-2 | 피드백 생성 | 5 | 02-api-contract §Feedback | `POST /chats/{id}/feedbacks` | 구현됨 |
+| P1-3 | 사용자-채팅당 1피드백 | 5 | 00-assumptions E4, H5 | 중복 → 409; soft-deleted row 포함 유니크 제약 | 구현됨 |
+| P1-4 | 인가/필터/정렬/페이징 피드백 목록 | 5 | 02-api-contract §Feedback list | `*Feedback*` 테스트 | 구현됨 |
+| P1-5 | 관리자 피드백 상태 변경 | 5 | 00-assumptions E2 | `PATCH .../status`; 멤버 → 403 | 구현됨 |
+| P1-6 | 최근 24시간 활동 집계 | 6 | 00-assumptions F1–F3 | `GET /admin/activity` 집계; 성공 로그인만 집계 | 구현됨 |
+| P1-7 | 관리자 전용 CSV 리포트(최근 24시간) | 6 | 00-assumptions F4 | `text/csv`; 멤버 → 403 | 구현됨 |
+| P1-8 | isStreaming=true 시 스트리밍 | 7 | 00-assumptions G1–G2 | SSE 응답; 비스트리밍 불변 | 구현됨 |
 
 ## P2 — 전달 품질
 

@@ -20,9 +20,11 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.TransactionDefinition
 import org.springframework.transaction.support.TransactionTemplate
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
+import java.util.concurrent.CompletableFuture
 
 @Service
 class ChatService(
@@ -40,10 +42,6 @@ class ChatService(
     }
 
     fun createChat(userId: Long, request: CreateChatRequest): CreateChatResponse {
-        if (request.isStreaming) {
-            throw BadRequestException("streaming is not supported yet")
-        }
-
         val question = request.question?.trim().orEmpty()
         if (question.isBlank()) {
             throw BadRequestException("question must not be blank")
@@ -60,6 +58,48 @@ class ChatService(
         )
 
         return saveChat(userId, question, aiResponse.answer, aiResponse.model)
+    }
+
+    fun createStreamingChat(userId: Long, request: CreateChatRequest): SseEmitter {
+        val question = request.question?.trim().orEmpty()
+        if (question.isBlank()) {
+            throw BadRequestException("question must not be blank")
+        }
+
+        val model = normalizeModel(request.model)
+        val emitter = SseEmitter(60_000L)
+        CompletableFuture.runAsync {
+            try {
+                val context = loadContextSnapshot(userId)
+                val aiResponse = aiClient.generate(
+                    AiGenerateRequest(
+                        question = question,
+                        context = context,
+                        model = model,
+                    ),
+                )
+                aiResponse.answer.chunked(32).ifEmpty { listOf("") }.forEach {
+                    emitter.send(SseEmitter.event().name("chunk").data(mapOf("delta" to it)))
+                }
+                val saved = saveChat(userId, question, aiResponse.answer, aiResponse.model)
+                emitter.send(
+                    SseEmitter.event()
+                        .name("done")
+                        .data(mapOf("chatId" to saved.chatId, "threadId" to saved.threadId, "model" to saved.model)),
+                )
+                emitter.complete()
+            } catch (exception: Exception) {
+                runCatching {
+                    emitter.send(
+                        SseEmitter.event()
+                            .name("error")
+                            .data(mapOf("message" to (exception.message ?: "Streaming failed"))),
+                    )
+                }
+                emitter.completeWithError(exception)
+            }
+        }
+        return emitter
     }
 
     fun getThreadChats(

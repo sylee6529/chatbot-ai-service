@@ -39,7 +39,7 @@ class SecurityConfig(
             }
             .authorizeHttpRequests {
                 it
-                    .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
+                    .dispatcherTypeMatchers(DispatcherType.ERROR, DispatcherType.ASYNC).permitAll()
                     .requestMatchers("/api/v1/health", "/api/v1/auth/signup", "/api/v1/auth/login").permitAll()
                     .anyRequest().authenticated()
             }

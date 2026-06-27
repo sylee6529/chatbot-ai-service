@@ -179,15 +179,16 @@ curl -s localhost:8080/api/v1/admin/reports/chats.csv \
 ## Phase 7 — 스트리밍  (P1)
 
 **산출물**
-- [ ] `isStreaming=true`인 `POST /api/v1/chats` → `SseEmitter` 통한 SSE
+- [x] `isStreaming=true`인 `POST /api/v1/chats` → `SseEmitter` 통한 SSE
       (`text/event-stream`); 비스트리밍 경로 불변.
-- [ ] 최종 조립된 답변은 여전히 영속화.
+- [x] 최종 조립된 답변은 여전히 영속화.
 
 **검증**
 ```bash
 ./gradlew test --tests '*Stream*'
 curl -N -XPOST localhost:8080/api/v1/chats -H "Authorization: Bearer $TOKEN" \
-  -H 'Content-Type: application/json' -d '{"message":"Stream please","isStreaming":true}'
+  -H 'Accept: text/event-stream' -H 'Content-Type: application/json' \
+  -d '{"question":"Stream please","isStreaming":true}'
 ```
 
 **문서 업데이트**: `docs/02-api-contract.md`(스트리밍 섹션), `docs/manual.html`.

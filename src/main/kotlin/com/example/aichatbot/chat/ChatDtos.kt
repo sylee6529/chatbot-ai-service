@@ -1,5 +1,6 @@
 package com.example.aichatbot.chat
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import java.time.Instant
 
 data class CreateChatRequest(
@@ -7,7 +8,9 @@ data class CreateChatRequest(
 
     val model: String? = null,
 
-    val isStreaming: Boolean = false,
+    @param:JsonProperty("isStreaming")
+    @field:JsonProperty("isStreaming")
+    val streaming: Boolean = false,
 )
 
 data class CreateChatResponse(

@@ -68,7 +68,7 @@ AI 챗봇 서비스 구현 전에 확정한 도메인, API, 데이터 저장 방
 
 | # | 결정 | 설명 |
 |---|------|------|
-| G1 | `isStreaming=true` 시 **SSE**(`text/event-stream`, `SseEmitter`) 방식으로 응답. 기본은 일반 JSON. | Spring MVC 구조를 유지하면서 스트리밍 응답을 제공한다. |
+| G1 | `isStreaming=true`와 `Accept: text/event-stream` 시 **SSE**(`text/event-stream`, `SseEmitter`) 방식으로 응답. 기본은 일반 JSON. | Spring MVC 구조를 유지하면서 스트리밍 응답을 제공한다. |
 | G2 | 스트리밍 완료 후 **전체 답변을 채팅 행으로 영속화**. | 데이터 유실 방지. |
 
 ## H. 영속화 & 플랫폼
